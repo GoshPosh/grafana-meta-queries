@@ -3,7 +3,7 @@
 
 # Grafana plugin for computed metrics
 
-![Screenshot](///GoshPosh/grafana-meta-queries/blob/master/img/MetaQueryPanel.png?raw=true)
+![Screenshot](/img/MetaQueryPanel.png?raw=true "ScreenShot")
 
 ## Status
 
