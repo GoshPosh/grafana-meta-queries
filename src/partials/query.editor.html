@@ -13,6 +13,15 @@
       </div>
     </div>
 
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword width-10">
+        Output Name
+        <a bs-tooltip="ctrl.errors.outputMetricName" style="color: rgb(229, 189, 28)" ng-show="ctrl.errors.outputMetricName">
+          <i class="fa fa-warning"></i>
+        </a>
+      </label>
+      <input type="text" class="input-small gf-form-input width-10" spellcheck='false' ng-model="ctrl.target.outputMetricName" ng-blur="ctrl.targetBlur()" placeholder="metric name" data-min-length=1>
+    </div>
     <div class="gf-form gf-form--grow">
       <div class="gf-form-label gf-form-label--grow"></div>
     </div>

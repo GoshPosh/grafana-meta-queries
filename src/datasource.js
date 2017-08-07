@@ -71,6 +71,7 @@ function (angular, _, dateMath, moment) {
         var periodsToShift = target.periods;
         var query = target.query;
         var metric = target.metric;
+        var outputMetricName = target.outputMetricName;
 
 
 
@@ -91,7 +92,7 @@ function (angular, _, dateMath, moment) {
                   }
               });
               return [{
-                "target": "MovingAverage",
+                "target": outputMetricName,
                  "datapoints": datapoints
               }];
                 // var fromMs = formatTimestamp(from);
