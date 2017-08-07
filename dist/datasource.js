@@ -107,6 +107,55 @@ function (angular, _, dateMath, moment) {
 
       }
       else if (target.queryType === 'MovingAverage') {
+          var periodsToShift = target.periods;
+          var query = target.query;
+          var metric = target.metric;
+          var outputMetricName = target.outputMetricName;
+
+
+
+          var actualFrom = options.range.from._d.getTime()
+          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift,'days').toDate();
+
+          options.targets = [targetsByRefId[query]]
+
+          promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
+              return ds.query(options).then(function (result) {
+                  var datapoints = []
+                  var data = result.data;
+                  data.forEach(function (datum) {
+                      if(datum.target===metric){
+                          var datapointByTime = {};
+                          datum.datapoints.forEach(function (datapoint) {
+                              datapointByTime[datapoint[1]] = datapoint[0];
+
+                              var metricSum = 0;
+                              for(var count = 0; count < periodsToShift; count++) {
+                                  var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
+                                  metricSum += datapointByTime[targetDate] || 0
+                              }
+
+                              if(datapoint[1]>=actualFrom){
+                                  datapoints.push([metricSum/periodsToShift,datapoint[1]])
+                              }
+                          })
+                      }
+                  });
+                  return [{
+                      "target": outputMetricName,
+                      "datapoints": datapoints
+                  }];
+                  // var fromMs = formatTimestamp(from);
+                  // metrics.forEach(function (metric) {
+                  //     if (!_.isEmpty(metric.datapoints[0]) && metric.datapoints[0][1] < fromMs) {
+                  //         metric.datapoints[0][1] = fromMs;
+                  //     }
+                  // });
+
+              });
+          });
+
+
       }
       else {
 
