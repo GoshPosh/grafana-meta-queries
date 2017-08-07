@@ -47,3 +47,8 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+#Grunt Related -- https://github.com/gruntjs/grunt/blob/master/.gitignore
+node_modules
+.npm-debug.log
+tmp
