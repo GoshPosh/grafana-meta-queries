@@ -52,9 +52,16 @@ function (angular, _, dateMath, moment) {
       var promises = options.targets.map(function (target) {
         if (target.datasource != dataSource.name) {
             // Might need datasource specific unhides
-          if(target.druidDS && target.aggregators){
-              for(var i=0;i<target.aggregators.length;i++){
-                  target.aggregators[i].hidden = false;
+          if(target.druidDS) {
+              if (target.currentAggregator) {
+                  for (var i = 0; i < target.currentAggregator.length; i++) {
+                      target.currentAggregator[i].hidden = false;
+                  }
+              }
+              if (target.aggregators) {
+                  for (var i = 0; i < target.aggregators.length; i++) {
+                      target.aggregators[i].hidden = false;
+                  }
               }
           }
           targetsByRefId[target.refId] = target
