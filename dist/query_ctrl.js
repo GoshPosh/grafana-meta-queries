@@ -24,7 +24,8 @@ System.register(['lodash', './sdk/sdk'], function(exports_1) {
                     _super.call(this, $scope, $injector);
                     this.queryTypeValidators = {
                         "TimeShift": this.validateTimeShiftQuery.bind(this),
-                        "MovingAverage": this.validateMovingAverageQuery.bind(this)
+                        "MovingAverage": this.validateMovingAverageQuery.bind(this),
+                        "Arithmetic": this.validateArithmeticQuery.bind(this)
                     };
                     this.defaultQueryType = "TimeShift";
                     this.defaultPeriods = 7;
@@ -67,6 +68,13 @@ System.register(['lodash', './sdk/sdk'], function(exports_1) {
                     var intPeriods = parseInt(target.periods);
                     if (isNaN(intPeriods)) {
                         errs.periods = "Periods must be an integer";
+                        return false;
+                    }
+                    return true;
+                };
+                MetaQueriesQueryCtrl.prototype.validateArithmeticQuery = function (target, errs) {
+                    if (!target.expression || target.expression.length == 0) {
+                        errs.expression = "Must specify a javascript expression";
                         return false;
                     }
                     return true;

@@ -3,9 +3,7 @@
 
 # Grafana plugin for computed metrics
 
-![Screenshot](https://raw.githubusercontent.com/grafana-druid-plugin/druidplugin/master/img/AddDataSource.png)
-![Screenshot](https://raw.githubusercontent.com/grafana-druid-plugin/druidplugin/master/img/ListDataSource.png)
-![Screenshot](https://raw.githubusercontent.com/grafana-druid-plugin/druidplugin/master/img/DruidPanel.png)
+![Screenshot](/img/MetaQueryPanel.png?raw=true "ScreenShot")
 
 ## Status
 

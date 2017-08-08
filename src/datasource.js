@@ -26,6 +26,7 @@ function (angular, _, dateMath, moment) {
   function MetaQueriesDatasource(instanceSettings, $q, backendSrv, templateSrv) {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
+    this.$q = $q;
     instanceSettings.jsonData = instanceSettings.jsonData || {};
 
     this.testDatasource = function() {
@@ -67,11 +68,11 @@ function (angular, _, dateMath, moment) {
 
       var promise = null;
 
+      var outputMetricName = target.outputMetricName;
       if (target.queryType === 'TimeShift') {
         var periodsToShift = target.periods;
         var query = target.query;
         var metric = target.metric;
-        var outputMetricName = target.outputMetricName;
 
 
 
@@ -110,7 +111,6 @@ function (angular, _, dateMath, moment) {
           var periodsToShift = target.periods;
           var query = target.query;
           var metric = target.metric;
-          var outputMetricName = target.outputMetricName;
 
 
 
@@ -157,8 +157,54 @@ function (angular, _, dateMath, moment) {
 
 
       }
-      else {
+      else if (target.queryType === 'Arithmetic') {
+          var expression = target.expression;
+          var promises= [], queryLetters = [];
 
+          for(var i=0;i<options.targets.length;i++){
+              if(options.targets[i].refId==target.refId){
+                  break
+              }
+              queryLetters.push(options.targets[i].refId);
+              promises.push(datasourceSrv.get(options.targets[i].datasource).then(function(ds) {
+                  return ds.query(options)
+              }))
+
+          }
+          promise = this.$q.all(promises).then(function(results) {
+              var functionArgs = queryLetters.join(', ');
+              var functionBody = 'return ('+expression+');';
+
+              var expressionFunction = new Function(functionArgs, functionBody);
+
+              var resultsHash= {};
+              for(var i=0;i<results.length;i++){
+
+                  var resultByQuery = results[i];
+
+                  for(var j=0;j<resultByQuery.data.length;j++){
+                      var resultByQueryMetric = resultByQuery.data[j];
+                      var metricName = resultByQueryMetric.target;
+                      for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
+                          var datapoint = resultByQueryMetric.datapoints[k];
+                          resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                          resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                          resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                      }
+                  }
+
+              }
+              var datapoints= [];
+              Object.keys(resultsHash).forEach(function (datapointTime) {
+                  datapoints.push([expressionFunction.apply(this,resultsHash[datapointTime]),datapointTime])
+              });
+
+
+              return [{
+                  "target": outputMetricName,
+                  "datapoints": datapoints
+              }];
+          })
       }
 
       return promise.then(function (metrics) {

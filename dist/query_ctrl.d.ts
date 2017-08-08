@@ -26,6 +26,7 @@ export declare class MetaQueriesQueryCtrl extends QueryCtrl {
     queryTypeValidators: {
         "TimeShift": any;
         "MovingAverage": any;
+        "Arithmetic": any;
     };
     defaultQueryType: string;
     defaultPeriods: number;
@@ -35,6 +36,7 @@ export declare class MetaQueriesQueryCtrl extends QueryCtrl {
     clearPeriods(): void;
     isValidQueryType(type: any): any;
     validateMovingAverageQuery(target: any, errs: any): boolean;
+    validateArithmeticQuery(target: any, errs: any): boolean;
     validateTimeShiftQuery(target: any, errs: any): boolean;
     validateTarget(): any;
 }

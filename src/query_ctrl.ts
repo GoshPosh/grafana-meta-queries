@@ -31,6 +31,7 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
     queryTypeValidators = {
       "TimeShift": this.validateTimeShiftQuery.bind(this),
       "MovingAverage": this.validateMovingAverageQuery.bind(this),
+      "Arithmetic": this.validateArithmeticQuery.bind(this),
     };
 
     defaultQueryType = "TimeShift";
@@ -102,6 +103,13 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
       return true;
     }
 
+  validateArithmeticQuery(target, errs) {
+    if (!target.expression || target.expression.length == 0) {
+      errs.expression = "Must specify a javascript expression";
+      return false;
+    }
+    return true;
+  }
   validateTimeShiftQuery(target, errs) {
     if (!target.periods) {
       errs.periods = "Must list specify the period for moving average";
