@@ -211,7 +211,7 @@ function (angular, _, dateMath, moment) {
               }
               var datapoints= [];
               Object.keys(resultsHash).forEach(function (datapointTime) {
-                  datapoints.push([expressionFunction.apply(this,resultsHash[datapointTime]),datapointTime])
+                  datapoints.push([expressionFunction.apply(this,resultsHash[datapointTime]),parseInt(datapointTime)])
               });
 
 
