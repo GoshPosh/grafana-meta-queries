@@ -38,18 +38,15 @@ function (angular, _, dateMath, moment) {
 
     // Called once per panel (graph)
     this.query = function(options) {
-      var datasourceSrv = options.datasourceSrv;
-      // can't do angular copy without removing datasource service
-      delete options.datasourceSrv;
-      this.targets = options.targets;
-
+      var datasourceSrv = this.datasourceSrv;
+      var panelTargets = this.panelTargets;
       var dataSource = this;
 
       console.log("Do query");
       console.log(options);
 
       var targetsByRefId = {};
-      var promises = options.targets.map(function (target) {
+      var promises = panelTargets.map(function (target) {
         if (target.datasource != dataSource.name) {
             // Might need datasource specific unhides
           if(target.druidDS) {
