@@ -58,13 +58,13 @@ function (angular, _, dateMath, moment) {
             // Might need datasource specific unhides
           if(target.druidDS) {
               if (target.currentAggregator) {
-                  for (var i = 0; i < target.currentAggregator.length; i++) {
-                      target.currentAggregator[i].hidden = false;
+                  for (var j = 0; j < target.currentAggregator.length; j++) {
+                      target.currentAggregator[j].hidden = false;
                   }
               }
               if (target.aggregators) {
-                  for (var i = 0; i < target.aggregators.length; i++) {
-                      target.aggregators[i].hidden = false;
+                  for (var k = 0; k < target.aggregators.length; k++) {
+                      target.aggregators[k].hidden = false;
                   }
               }
           }
