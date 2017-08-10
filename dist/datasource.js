@@ -178,12 +178,14 @@ function (angular, _, dateMath, moment) {
           var expression = target.expression;
           var promises= [], queryLetters = [];
 
-          for(var i=0;i<options.targets.length;i++){
-              if(options.targets[i].refId==target.refId){
+          var panelTargets = options.panelTargets;
+          for(var i=0;i<panelTargets.length;i++){
+              var panelTarget = panelTargets[i];
+              if(panelTarget.refId==target.refId){
                   break
               }
-              queryLetters.push(options.targets[i].refId);
-              promises.push(datasourceSrv.get(options.targets[i].datasource).then(function(ds) {
+              queryLetters.push(panelTarget.refId);
+              promises.push(datasourceSrv.get(panelTarget.datasource).then(function(ds) {
                   return ds.query(options)
               }))
 
