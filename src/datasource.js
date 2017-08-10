@@ -30,9 +30,8 @@ function (angular, _, dateMath, moment) {
     instanceSettings.jsonData = instanceSettings.jsonData || {};
 
     // TODO find better way to do this
-    //Hack to get datasourceSrv & all targets for underlying queries
+    //Hack to get datasourceSrv
     this.datasourceSrv = angular.element('body').injector().get('datasourceSrv');
-    this.panelTargets =  angular.element('grafana-panel').scope().ctrl.panel.targets;
 
     this.testDatasource = function() {
       return new Promise(function(resolve,reject){
@@ -44,15 +43,18 @@ function (angular, _, dateMath, moment) {
     // Called once per panel (graph)
     this.query = function(options) {
       var datasourceSrv = this.datasourceSrv;
-      var panelTargets = this.panelTargets;
+      var panelTargets = options.panelTargets;
       var dataSource = this;
 
       console.log("Do query");
       console.log(options);
 
       var targetsByRefId = {};
-      var promises = panelTargets.map(function (target) {
-        if (target.datasource != dataSource.name) {
+      for(var i=0;i<panelTargets.length;i++){
+        var target = panelTargets[i];
+        if (target.refId === options.targets[0].refId) {
+            break;
+        }
             // Might need datasource specific unhides
           if(target.druidDS) {
               if (target.currentAggregator) {
@@ -67,10 +69,8 @@ function (angular, _, dateMath, moment) {
               }
           }
           targetsByRefId[target.refId] = target
-          var d = $q.defer();
-          d.resolve([]);
-          return d.promise;
         }
+      var promises = options.targets.map(function(target){
         var opt = angular.copy(options);
         return dataSource._doQuery(opt,  target, datasourceSrv, targetsByRefId);
       });
