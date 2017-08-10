@@ -29,6 +29,11 @@ function (angular, _, dateMath, moment) {
     this.$q = $q;
     instanceSettings.jsonData = instanceSettings.jsonData || {};
 
+    // TODO find better way to do this
+    //Hack to get datasourceSrv & all targets for underlying queries
+    this.datasourceSrv = angular.element('body').injector().get('datasourceSrv');
+    this.panelTargets =  angular.element('grafana-panel').scope().ctrl.panel.targets;
+
     this.testDatasource = function() {
       return new Promise(function(resolve,reject){
           resolve({ status: "success", message: "Meta Source is working correctly", title: "Success" });

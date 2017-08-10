@@ -62,8 +62,6 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
           });
     };
 
-    this.datasource.datasourceSrv = $injector.get('datasourceSrv');
-    this.datasource.panelTargets = this.panel.targets
 
   }
 

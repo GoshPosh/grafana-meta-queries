@@ -45,8 +45,6 @@ System.register(['lodash', './sdk/sdk'], function(exports_1) {
                             }));
                         });
                     };
-                    this.datasource.datasourceSrv = $injector.get('datasourceSrv');
-                    this.datasource.panelTargets = this.panel.targets;
                 }
                 MetaQueriesQueryCtrl.prototype.targetBlur = function () {
                     this.errors = this.validateTarget();
