@@ -184,12 +184,15 @@ function (angular, _, dateMath, moment) {
               if(panelTarget.refId==target.refId){
                   break
               }
-              queryLetters.push(panelTarget.refId);
-              promises.push(datasourceSrv.get(panelTarget.datasource).then(function(ds) {
-                  var opt = angular.copy(options);
-                  opt.targets = [panelTarget];
-                  return ds.query(opt)
-              }(panelTarget)))
+              (function (panelTarget) {
+                  queryLetters.push(panelTarget.refId);
+                  promises.push(datasourceSrv.get(panelTarget.datasource).then(function(ds) {
+                      var opt = angular.copy(options);
+                      opt.targets = [panelTarget];
+                      return ds.query(opt)
+                  }))
+              })(panelTarget);
+
 
           }
           promise = this.$q.all(promises).then(function(results) {
