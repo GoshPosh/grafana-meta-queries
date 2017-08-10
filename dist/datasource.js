@@ -189,7 +189,7 @@ function (angular, _, dateMath, moment) {
                   var opt = angular.copy(options);
                   opt.targets = [panelTarget];
                   return ds.query(opt)
-              }))
+              }(panelTarget)))
 
           }
           promise = this.$q.all(promises).then(function(results) {
