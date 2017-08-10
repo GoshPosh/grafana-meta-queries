@@ -187,7 +187,7 @@ function (angular, _, dateMath, moment) {
               queryLetters.push(panelTarget.refId);
               promises.push(datasourceSrv.get(panelTarget.datasource).then(function(ds) {
                   var opt = angular.copy(options);
-                  opt.targets = panelTarget;
+                  opt.targets = [panelTarget];
                   return ds.query(opt)
               }))
 
