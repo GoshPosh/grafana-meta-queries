@@ -60,14 +60,31 @@ function (angular, _, dateMath, moment) {
 
 
         _.forEach(targets,function(target){
-          promisesByRefId[target.refId] = promise
+          var  nonHiddenTargetPromise = promise;
+          if(dsName !== _this.name && target.hide===true){
+              nonHiddenTargetPromise = _this.datasourceSrv.get(dsName).then(function (ds) {
+                  var nonHiddenTarget = angular.copy(target);
+                  nonHiddenTarget.hide = false;
+                  opt.targets = [nonHiddenTarget];
+                  return ds.query(opt);
+              });
+          }
+          promisesByRefId[target.refId] = nonHiddenTargetPromise;
           targetsByRefId[target.refId] = target
         });
         promises.push(promise)
       });
 
       return this.$q.all(promises).then(function (results) {
-          return { data: _.flatten(_.map(results, 'data')) };
+          return { data: _.flatten(_.map(results, function (result) {
+              var data = result.data;
+              if(data){
+                  data = _.filter(result.data,function(datum){
+                      return datum.hide!==true;
+                  })
+              }
+              return data;
+          })) };
       });
 
     };
@@ -91,7 +108,9 @@ function (angular, _, dateMath, moment) {
 
         options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,'days').toDate();
         options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,'days').toDate();
-        options.targets = [targetsByRefId[query]]
+        var metaTarget = angular.copy(targetsByRefId[query]);
+        metaTarget.hide = false;
+        options.targets = [metaTarget]
 
         promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
             return ds.query(options).then(function (result) {
@@ -107,7 +126,8 @@ function (angular, _, dateMath, moment) {
               });
               return [{
                 "target": outputMetricName,
-                 "datapoints": datapoints
+                 "datapoints": datapoints,
+                  "hide" : target.hide
               }];
                 // var fromMs = formatTimestamp(from);
                 // metrics.forEach(function (metric) {
@@ -130,7 +150,9 @@ function (angular, _, dateMath, moment) {
           var actualFrom = options.range.from._d.getTime()
           options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift,'days').toDate();
 
-          options.targets = [targetsByRefId[query]]
+          var metaTarget = angular.copy(targetsByRefId[query]);
+          metaTarget.hide = false;
+          options.targets = [metaTarget]
 
           promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
               return ds.query(options).then(function (result) {
@@ -156,7 +178,8 @@ function (angular, _, dateMath, moment) {
                   });
                   return [{
                       "target": outputMetricName,
-                      "datapoints": datapoints
+                      "datapoints": datapoints,
+                      "hide" : target.hide
                   }];
                   // var fromMs = formatTimestamp(from);
                   // metrics.forEach(function (metric) {
@@ -214,7 +237,8 @@ function (angular, _, dateMath, moment) {
 
               return [{
                   "target": outputMetricName,
-                  "datapoints": datapoints
+                  "datapoints": datapoints,
+                  "hide" : target.hide
               }];
           })
       }
