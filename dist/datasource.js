@@ -23,15 +23,9 @@ function (angular, _, dateMath, moment) {
   'use strict';
 
   /** @ngInject */
-  function MetaQueriesDatasource(instanceSettings, $q, backendSrv, templateSrv) {
-    this.type = instanceSettings.type;
-    this.name = instanceSettings.name;
+  function MetaQueriesDatasource($q, datasourceSrv) {
+    this.datasourceSrv = datasourceSrv;
     this.$q = $q;
-    instanceSettings.jsonData = instanceSettings.jsonData || {};
-
-    // TODO find better way to do this
-    //Hack to get datasourceSrv
-    this.datasourceSrv = angular.element('body').injector().get('datasourceSrv');
 
     this.testDatasource = function() {
       return new Promise(function(resolve,reject){
@@ -42,45 +36,47 @@ function (angular, _, dateMath, moment) {
 
     // Called once per panel (graph)
     this.query = function(options) {
-      var datasourceSrv = this.datasourceSrv;
-      var panelTargets = options.panelTargets;
-      var dataSource = this;
-
       console.log("Do query");
       console.log(options);
 
+      var _this = this;
+      var sets = _.groupBy(options.targets, 'datasource');
+      var promisesByRefId = {};
+      var promises = [];
       var targetsByRefId = {};
-      for(var i=0;i<panelTargets.length;i++){
-        var target = panelTargets[i];
-        if (target.refId === options.targets[0].refId) {
-            break;
-        }
-            // Might need datasource specific unhides
-          if(target.druidDS) {
-              if (target.currentAggregator) {
-                  for (var j = 0; j < target.currentAggregator.length; j++) {
-                      target.currentAggregator[j].hidden = false;
-                  }
-              }
-              if (target.aggregators) {
-                  for (var k = 0; k < target.aggregators.length; k++) {
-                      target.aggregators[k].hidden = false;
-                  }
-              }
-          }
-          targetsByRefId[target.refId] = target
-        }
-      var promises = options.targets.map(function(target){
+      _.forEach(sets, function (targets, dsName) {
+        var promise = null;
         var opt = angular.copy(options);
-        return dataSource._doQuery(opt,  target, datasourceSrv, targetsByRefId);
+
+        if (dsName === _this.name) {
+          promise = _this._doQuery(targets, promisesByRefId, opt, targetsByRefId);
+        }
+        else{
+          promise = _this.datasourceSrv.get(dsName).then(function (ds) {
+            opt.targets = targets;
+            return ds.query(opt);
+          });
+        }
+
+
+        _.forEach(targets,function(target){
+          promisesByRefId[target.refId] = promise
+          targetsByRefId[target.refId] = target
+        });
+        promises.push(promise)
       });
 
-      return $q.all(promises).then(function(results) {
-        return { data: _.flatten(results) };
+      return this.$q.all(promises).then(function (results) {
+          return { data: _.flatten(_.map(results, 'data')) };
       });
+
     };
 
-    this._doQuery = function (options,  target, datasourceSrv, targetsByRefId) {
+    this._doQuery = function (targets, promisesByRefId, options, targetsByRefId) {
+
+      var metaQueryPromises = [];
+
+      _.forEach(targets,function (target) {
 
 
       var promise = null;
@@ -176,26 +172,9 @@ function (angular, _, dateMath, moment) {
       }
       else if (target.queryType === 'Arithmetic') {
           var expression = target.expression;
-          var promises= [], queryLetters = [];
+          var queryLetters = Object.keys(targetsByRefId);
 
-          var panelTargets = options.panelTargets;
-          for(var i=0;i<panelTargets.length;i++){
-              var panelTarget = panelTargets[i];
-              if(panelTarget.refId==target.refId){
-                  break
-              }
-              (function (panelTarget) {
-                  queryLetters.push(panelTarget.refId);
-                  promises.push(datasourceSrv.get(panelTarget.datasource).then(function(ds) {
-                      var opt = angular.copy(options);
-                      opt.targets = [panelTarget];
-                      return ds.query(opt)
-                  }))
-              })(panelTarget);
-
-
-          }
-          promise = this.$q.all(promises).then(function(results) {
+          promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
               var functionArgs = queryLetters.join(', ');
               var functionBody = 'return ('+expression+');';
 
@@ -220,7 +199,16 @@ function (angular, _, dateMath, moment) {
               }
               var datapoints= [];
               Object.keys(resultsHash).forEach(function (datapointTime) {
-                  datapoints.push([expressionFunction.apply(this,resultsHash[datapointTime]),parseInt(datapointTime)])
+                  var data = resultsHash[datapointTime];
+                  var result = 0;
+                  try {
+                      result = expressionFunction.apply(this,data)
+                  }
+                  catch(err) {
+                      console.log(err);
+                  }
+                  datapoints.push([result,parseInt(datapointTime)])
+
               });
 
 
@@ -231,9 +219,22 @@ function (angular, _, dateMath, moment) {
           })
       }
 
-      return promise.then(function (metrics) {
-        return metrics;
+
+      var dataWrappedPromise =   promise.then(function (metrics) {
+          return {
+              data: metrics
+          }
       });
+      promisesByRefId[target.refId] = dataWrappedPromise;
+      metaQueryPromises.push(dataWrappedPromise);
+      targetsByRefId[target.refId]= target; 
+
+      });
+
+        return this.$q.all(metaQueryPromises).then(function (results) {
+            return { data: _.flatten(_.map(results, 'data')) };
+        });
+
     };
 
 

@@ -4,6 +4,7 @@
   "type": "datasource",
 
   "metrics": true,
+  "mixed" : true,
 
   "info": {
     "version": "0.0.1",
