@@ -3,6 +3,7 @@
 
 # Grafana plugin for computed metrics
 
+![Screenshot](/img/DataSourceConfig.png?raw=true "ScreenShot")
 ![Screenshot](/img/MetaQueryPanel.png?raw=true "ScreenShot")
 
 ## Status
