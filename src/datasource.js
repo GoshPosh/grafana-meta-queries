@@ -89,12 +89,13 @@ function (angular, _, dateMath, moment) {
 
     };
 
-    this._doQuery = function (targets, promisesByRefId, options, targetsByRefId) {
+    this._doQuery = function (targets, promisesByRefId, opt, targetsByRefId) {
 
       var metaQueryPromises = [];
 
       _.forEach(targets,function (target) {
 
+      var options = angular.copy(opt);
 
       var promise = null;
 
