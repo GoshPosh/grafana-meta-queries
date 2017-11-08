@@ -1,6 +1,6 @@
 {
   "name": "MetaQueries",
-  "id": "grafana-meta-queries-datasource",
+  "id": "goshposh-metaqueries-datasource",
   "type": "datasource",
 
   "metrics": true,
