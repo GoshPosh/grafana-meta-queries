@@ -1,7 +1,7 @@
 ## Grafana Version Compatibility:
 **Grafana Meta Queries plugin 0.0.1 and above are supported for Grafana: 4.x.x**
 
-# Grafana plugin for computed metrics
+# Grafana plugin for calculating time period metrics like week over week, month over month and year over year etc.  
 
 ![Screenshot](/img/DataSourceConfig.png?raw=true "ScreenShot")
 ![Screenshot](/img/MetaQueryPanel.png?raw=true "ScreenShot")
