@@ -13,20 +13,20 @@ sudo service grafana-server restart
 Create a new datasource with a name and select `type` as `MetaQueries`
 ![Screenshot](/img/DataSourceConfig.png?raw=true "DataSource")
 
-##Examples
-####Arithmetic
+## Examples
+#### Arithmetic
 Lets you perform arithmetic operations on one or more existing queries.
 ![Screenshot](/img/arithmetic-ex1.png?raw=true "Arithmetic Example 1 - Metric * 2")
 ![Screenshot](/img/arithmetic-ex2.png?raw=true "Arithmetic Example 2 - Metric A + Metric B")
 
-####Moving Average
+#### Moving Average
 ![Screenshot](/img/moving_average-ex1.png?raw=true "Moving Average Example 1 - 7 period moving average of Metric A ")
 
-####Time Shift
+#### Time Shift
 ![Screenshot](/img/time_shift-ex1.png?raw=true "Time Shift Example 1 - 1 period timeshift of Metric A ")
 
 
-##Compatibility
+## Compatibility
 Grafana Meta Queries plugin 0.0.1 and above are supported for Grafana: 4.x.x
 
 
@@ -36,6 +36,6 @@ Grafana Meta Queries plugin 0.0.1 and above are supported for Grafana: 4.x.x
 * Time shift of Moving average is not supported
 * Time shift of Time Shift is not supported
 
-##Status
+## Status
 Lot of features might still not be implemented. Your contributions are welcome.
 
