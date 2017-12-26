@@ -13,6 +13,12 @@ sudo service grafana-server restart
 Create a new datasource with a name and select `type` as `MetaQueries`
 ![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/DataSourceConfig.png?raw=true "DataSource")
 
+## Usage
+* Set the Graph's data source to `MetaQueries`
+* Add query of your data source (add a few more)
+* Add query with `MetaQueries` as data source
+* Reference other columns as `A` or `B` depending on what is shown 
+
 ## Examples
 #### Arithmetic
 Lets you perform arithmetic operations on one or more existing queries.
