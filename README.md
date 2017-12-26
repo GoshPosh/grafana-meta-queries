@@ -11,19 +11,19 @@ sudo service grafana-server restart
 ```  
 
 Create a new datasource with a name and select `type` as `MetaQueries`
-![Screenshot](/img/DataSourceConfig.png?raw=true "DataSource")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/DataSourceConfig.png?raw=true "DataSource")
 
 ## Examples
 #### Arithmetic
 Lets you perform arithmetic operations on one or more existing queries.
-![Screenshot](/img/arithmetic-ex1.png?raw=true "Arithmetic Example 1 - Metric * 2")
-![Screenshot](/img/arithmetic-ex2.png?raw=true "Arithmetic Example 2 - Metric A + Metric B")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/arithmetic-ex1.png?raw=true "Arithmetic Example 1 - Metric * 2")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/arithmetic-ex2.png?raw=true "Arithmetic Example 2 - Metric A + Metric B")
 
 #### Moving Average
-![Screenshot](/img/moving_average-ex1.png?raw=true "Moving Average Example 1 - 7 period moving average of Metric A ")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/moving_average-ex1.png?raw=true "Moving Average Example 1 - 7 period moving average of Metric A ")
 
 #### Time Shift
-![Screenshot](/img/time_shift-ex1.png?raw=true "Time Shift Example 1 - 1 period timeshift of Metric A ")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/time_shift-ex1.png?raw=true "Time Shift Example 1 - 1 period timeshift of Metric A ")
 
 
 ## Compatibility
