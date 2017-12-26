@@ -76,7 +76,7 @@ function (angular, _, dateMath, moment) {
       });
 
       return this.$q.all(promises).then(function (results) {
-          return { data: _.flatten(_.map(results, function (result) {
+          return { data: _.flatten(_.filter(_.map(results, function (result) {
               var data = result.data;
               if(data){
                   data = _.filter(result.data,function(datum){
@@ -84,7 +84,7 @@ function (angular, _, dateMath, moment) {
                   })
               }
               return data;
-          })) };
+          }),function(result){return result!==undefined && result!==null})) };
       });
 
     };
@@ -93,7 +93,7 @@ function (angular, _, dateMath, moment) {
 
       var metaQueryPromises = [];
 
-      _.forEach(targets,function (target) { 
+      _.forEach(targets,function (target) {
 
       var options = angular.copy(opt);
 
