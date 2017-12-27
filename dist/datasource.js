@@ -212,11 +212,13 @@ function (angular, _, dateMath, moment) {
                   for(var j=0;j<resultByQuery.data.length;j++){
                       var resultByQueryMetric = resultByQuery.data[j];
                       var metricName = resultByQueryMetric.target;
-                      for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
-                          var datapoint = resultByQueryMetric.datapoints[k];
-                          resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
-                          resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                          resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                      if(resultByQueryMetric.datapoints){
+                          for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
+                              var datapoint = resultByQueryMetric.datapoints[k];
+                              resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                              resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                              resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                          }
                       }
                   }
 
