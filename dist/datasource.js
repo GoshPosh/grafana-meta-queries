@@ -148,17 +148,17 @@ function (angular, _, dateMath, moment) {
 
 
 
-          var actualFrom = options.range.from._d.getTime()
-          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift,'days').toDate();
+          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
 
           var metaTarget = angular.copy(targetsByRefId[query]);
           metaTarget.hide = false;
           options.targets = [metaTarget]
 
           promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-              return ds.query(options).then(function (result) {
+              return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
+                  var actualFrom = results[0]['data'][0]['datapoints'][0][1]
                   var datapoints = []
-                  var data = result.data;
+                  var data = results[1].data;
                   data.forEach(function (datum) {
                       if(datum.target===metric){
                           var datapointByTime = {};
