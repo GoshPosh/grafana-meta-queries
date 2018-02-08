@@ -148,17 +148,23 @@ function (angular, _, dateMath, moment) {
 
 
 
-          var actualFrom = options.range.from._d.getTime()
-          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift,'days').toDate();
+          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
 
           var metaTarget = angular.copy(targetsByRefId[query]);
           metaTarget.hide = false;
           options.targets = [metaTarget]
 
           promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-              return ds.query(options).then(function (result) {
+              return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
+//              when plotting moving average the first data point does not show up. That leaves with broken graph in the beginning.
+//              We are calculating actualFrom from the first timestamp from the original promise query and then pushing datapoints whose timestamps that are greater or equal to actualFrom
+              if(results[0]['data'][0]['datapoints'][0]==undefined) {
+                var actualFrom = null
+              }else{
+                var actualFrom = results[0]['data'][0]['datapoints'][0][1]
+              }
                   var datapoints = []
-                  var data = result.data;
+                  var data = results[1].data;
                   data.forEach(function (datum) {
                       if(datum.target===metric){
                           var datapointByTime = {};
@@ -171,7 +177,7 @@ function (angular, _, dateMath, moment) {
                                   metricSum += datapointByTime[targetDate] || 0
                               }
 
-                              if(datapoint[1]>=actualFrom){
+                              if(actualFrom && datapoint[1]>=actualFrom){
                                   datapoints.push([metricSum/periodsToShift,datapoint[1]])
                               }
                           })
