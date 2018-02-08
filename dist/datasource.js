@@ -156,7 +156,12 @@ function (angular, _, dateMath, moment) {
 
           promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
               return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
-                  var actualFrom = results[0]['data'][0]['datapoints'][0][1]
+                  try{
+                   var actualFrom = results[0]['data'][0]['datapoints'][0][1];}
+                  catch(err){
+                   console.log(err);
+                   var actualFrom = null;
+                  }
                   var datapoints = []
                   var data = results[1].data;
                   data.forEach(function (datum) {
@@ -171,7 +176,7 @@ function (angular, _, dateMath, moment) {
                                   metricSum += datapointByTime[targetDate] || 0
                               }
 
-                              if(datapoint[1]>=actualFrom){
+                              if(actualFrom && datapoint[1]>=actualFrom){
                                   datapoints.push([metricSum/periodsToShift,datapoint[1]])
                               }
                           })
