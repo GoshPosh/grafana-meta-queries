@@ -156,6 +156,8 @@ function (angular, _, dateMath, moment) {
 
           promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
               return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
+//              when plotting moving average the first data point does not show up. That leaves with broken graph in the beginning.
+//              We are calculating actualFrom from the first timestamp from the original promise query and then pushing datapoints whose timestamps that are greater or equal to actualFrom
               if(results[0]['data'][0]['datapoints'][0]==undefined) {
                 var actualFrom = null
               }else{
