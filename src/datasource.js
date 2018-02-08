@@ -156,12 +156,11 @@ function (angular, _, dateMath, moment) {
 
           promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
               return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
-                  try{
-                   var actualFrom = results[0]['data'][0]['datapoints'][0][1];}
-                  catch(err){
-                   console.log(err);
-                   var actualFrom = null;
-                  }
+              if(results[0]['data'][0]['datapoints'][0]==undefined) {
+                var actualFrom = null
+              }else{
+                var actualFrom = results[0]['data'][0]['datapoints'][0][1]
+              }
                   var datapoints = []
                   var data = results[1].data;
                   data.forEach(function (datum) {
