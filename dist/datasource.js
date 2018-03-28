@@ -205,7 +205,7 @@ function (angular, _, dateMath, moment) {
           var queryLetters = Object.keys(targetsByRefId);
 
           promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
-              var functionArgs = queryLetters.join(', ');
+              var functionArgs = queryLetters.concat("scopedVars").join(', ');
               var functionBody = 'return ('+expression+');';
 
               var expressionFunction = new Function(functionArgs, functionBody);
@@ -223,7 +223,10 @@ function (angular, _, dateMath, moment) {
                               var datapoint = resultByQueryMetric.datapoints[k];
                               resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
                               resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                              resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                              resultsHash[datapoint[1]][i][metricName] = datapoint[0];
+                              var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
+                              var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
+                              resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
                           }
                       }
                   }
@@ -231,7 +234,7 @@ function (angular, _, dateMath, moment) {
               }
               var datapoints= [];
               Object.keys(resultsHash).forEach(function (datapointTime) {
-                  var data = resultsHash[datapointTime];
+                  var data = resultsHash[datapointTime].concat(options.scopedVars);
                   var result = 0;
                   try {
                       result = expressionFunction.apply(this,data)
