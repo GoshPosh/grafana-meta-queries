@@ -203,6 +203,12 @@ function (angular, _, dateMath, moment) {
       else if (target.queryType === 'Arithmetic') {
           var expression = target.expression;
           var queryLetters = Object.keys(targetsByRefId);
+          // Clean out strings and array subscripts from expression to make letters easier to find
+          var temp = expression.replace(/(['"])(?:[^\\\1]|\\.)*?\1/g, '').replace(/\[[^\]]*\]/g, '');
+          // Regular expression to find letters in the expression
+          var findLetter = new RegExp('(^|[^A-Za-z0-9_.])['+queryLetters.join("")+'](?=[^A-Za-z0-9_]|$)', 'g');
+          // Extract letters used in the expression
+          var expressionLetters = temp.match(findLetter).map(function(v){return v.slice(-1);});
 
           promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
               var functionArgs = queryLetters.concat("scopedVars").join(', ');
@@ -235,16 +241,29 @@ function (angular, _, dateMath, moment) {
               var datapoints= [];
               Object.keys(resultsHash).forEach(function (datapointTime) {
                   var data = resultsHash[datapointTime].concat(options.scopedVars);
-                  var result = 0;
-                  try {
-                      result = expressionFunction.apply(this,data)
+                  // Check that all required letters are defined in this sample
+                  if (queryLetters.reduce(function(a,d,i){return a && data.length+1 > i &&
+                                                                 (!(expressionLetters.includes(d)) ||
+                                                                  (typeof data[i] !== 'undefined'));},
+                                          true)) {
+                      try {
+                          var result = expressionFunction.apply(this,data);
+                          datapoints.push([result,parseInt(datapointTime)]);
+                      }
+                      catch(err) {
+                          console.log(err);
+                      }
                   }
-                  catch(err) {
-                      console.log(err);
-                  }
-                  datapoints.push([result,parseInt(datapointTime)])
 
               });
+              if (!datapoints.length) {
+                  if (expressionLetters.length) {
+                      console.log("Expression '$expression' uses no traces and results in no data?");
+                  } else {
+                      console.log("Expression '$expression' results in no data, do traces " +
+                                  expressionLetters.join() + " all exist?");
+                  }
+              }
 
 
               return [{
