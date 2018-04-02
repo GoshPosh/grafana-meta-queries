@@ -240,7 +240,7 @@ function (angular, _, dateMath, moment) {
 
               }
               var datapoints= [];
-              Object.keys(resultsHash).forEach(function (datapointTime) {
+              Object.keys(resultsHash).sort(function(a,b){return a-b;}).forEach(function(datapointTime){
                   var data = [options.scopedVars].concat(resultsHash[datapointTime]);
                   // Check that all required letters are defined in this sample
                   if (queryLetters.reduce(function(a,d,i){return a && (!(expressionLetters.includes(d)) ||
