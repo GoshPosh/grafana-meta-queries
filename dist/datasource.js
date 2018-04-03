@@ -260,10 +260,10 @@ function (angular, _, dateMath, moment) {
               });
               if (!datapoints.length) {
                   if (expressionLetters.length) {
-                      console.log("Expression '$expression' uses no letters and results in no data?");
-                  } else {
-                      console.log("Expression '$expression' results in no data, do letters " +
+                      console.log("Expression '"+expression+"' results in no data, do letters " +
                                   expressionLetters.join() + " all exist?");
+                  } else {
+                      console.log("Expression '"+expression+"' uses no letters and results in no data?");
                   }
               }
 
