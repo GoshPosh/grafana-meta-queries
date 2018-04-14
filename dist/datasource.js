@@ -206,7 +206,7 @@ function (angular, _, dateMath, moment) {
           // Clean out strings from expression to make letters easier to find
           var temp = expression.replace(/(['"])(?:[^\\\1]|\\.)*?\1/g, '$1$1');
           // Regular expression to find letters in the expression
-          var findLetter = new RegExp('(^|[^A-Za-z0-9_.])['+queryLetters.join("")+'](?=[[.])', 'g');
+          var findLetter = new RegExp('(^|[^A-Za-z0-9_.])['+queryLetters.join("")+'](?=[^A-Za-z0-9_]|$)', 'g');
           // Extract letters used in the expression
           var expressionLetters = temp.match(findLetter).map(function(v){return v.slice(-1);}).
                                                          filter(function(v,i,a){return a.indexOf(v)===i;});
