@@ -30,6 +30,7 @@ export declare class MetaQueriesQueryCtrl extends QueryCtrl {
     };
     defaultQueryType: string;
     defaultPeriods: number;
+    defaultPeriodsUnit: string;
     /** @ngInject **/
     constructor($scope: any, $injector: any, $q: any);
     targetBlur(): void;

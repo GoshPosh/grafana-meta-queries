@@ -104,11 +104,14 @@ function (angular, _, dateMath, moment) {
         var periodsToShift = target.periods;
         var query = target.query;
         var metric = target.metric;
+        var periodsUnit = target.periodsunit;
 
 
 
-        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,'days').toDate();
-        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,'days').toDate();
+        options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift,periodsUnit).toDate();
+        options.range.to._d = dateToMoment(options.range.to, false).toDate();
+        options.rangeRaw.from = options.range.from;
+        options.rangeRaw.to = options.range.to;
         var metaTarget = angular.copy(targetsByRefId[query]);
         metaTarget.hide = false;
         options.targets = [metaTarget]
@@ -117,11 +120,15 @@ function (angular, _, dateMath, moment) {
             return ds.query(options).then(function (result) {
               var datapoints = []
               var data = result.data;
+              var toRawTime = dateToMoment(options.rangeRaw.to, false).subtract(periodsToShift,periodsUnit).toDate().getTime();
+              
               data.forEach(function (datum) {
                   if(datum.target===metric){
                     datum.datapoints.forEach(function (datapoint) {
-                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,'days').toDate().getTime();
-                        datapoints.push(datapoint)
+                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).add(periodsToShift,periodsUnit).toDate().getTime();
+                        if(datapoint[1] <= toRawTime){
+                            datapoints.push(datapoint)
+                        }
                     })
                   }
               });

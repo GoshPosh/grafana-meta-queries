@@ -29,6 +29,7 @@ System.register(['lodash', './sdk/sdk'], function(exports_1) {
                     };
                     this.defaultQueryType = "TimeShift";
                     this.defaultPeriods = 7;
+                    this.defaultPeriodsUnit = "days";
                     if (!this.target.queryType) {
                         this.target.queryType = this.defaultQueryType;
                     }
@@ -36,6 +37,9 @@ System.register(['lodash', './sdk/sdk'], function(exports_1) {
                     this.errors = this.validateTarget();
                     if (!this.target.periods) {
                         this.clearPeriods();
+                    }
+                    if (!this.target.periodsunits) {
+                        this.target.periodsunits = this.defaultPeriodsUnit;
                     }
                     this.getQueryLetters = function (query, callback) {
                         return _this.datasource.getTargets()
