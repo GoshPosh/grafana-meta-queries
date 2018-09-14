@@ -145,10 +145,17 @@ function (angular, _, dateMath, moment) {
           var periodsToShift = target.periods;
           var query = target.query;
           var metric = target.metric;
+          var periodsToShiftTemp = 0
+          if(target.datasource==targetsByRefId[query].datasource){
+              metric=targetsByRefId[query].metric
+              periodsToShiftTemp=Math.abs(targetsByRefId[query].periods)+periodsToShift
+              query=targetsByRefId[query].query
+              options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShiftTemp-1,'days').toDate();
+          }
 
-
-
-          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+          else{
+              options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+          }
 
           var metaTarget = angular.copy(targetsByRefId[query]);
           metaTarget.hide = false;
@@ -172,11 +179,18 @@ function (angular, _, dateMath, moment) {
                               datapointByTime[datapoint[1]] = datapoint[0];
 
                               var metricSum = 0;
+                              if(periodsToShiftTemp!=0){
+                               for(var count = periodsToShift; count < periodsToShiftTemp; count++) {
+                                 var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
+                                 metricSum += datapointByTime[targetDate] || 0
+                               }
+                              }
+                             else{
                               for(var count = 0; count < periodsToShift; count++) {
                                   var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
                                   metricSum += datapointByTime[targetDate] || 0
                               }
-
+                             }
                               if(actualFrom && datapoint[1]>=actualFrom){
                                   datapoints.push([metricSum/periodsToShift,datapoint[1]])
                               }
@@ -195,7 +209,6 @@ function (angular, _, dateMath, moment) {
                   //     }
                   // });
 
-              });
           });
 
 
