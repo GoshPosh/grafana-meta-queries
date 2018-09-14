@@ -145,10 +145,17 @@ function (angular, _, dateMath, moment) {
           var periodsToShift = target.periods;
           var query = target.query;
           var metric = target.metric;
+          var periodsToShiftTemp = 0
+          if(target.datasource==targetsByRefId[query].datasource){
+              metric=targetsByRefId[query].metric
+              periodsToShiftTemp=Math.abs(targetsByRefId[query].periods)+periodsToShift
+              query=targetsByRefId[query].query
+              options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShiftTemp-1,'days').toDate();
+          }
 
-
-
-          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+          else{
+              options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+          }
 
           var metaTarget = angular.copy(targetsByRefId[query]);
           metaTarget.hide = false;
@@ -172,11 +179,18 @@ function (angular, _, dateMath, moment) {
                               datapointByTime[datapoint[1]] = datapoint[0];
 
                               var metricSum = 0;
+                              if(periodsToShiftTemp!=0){
+                               for(var count = periodsToShift; count < periodsToShiftTemp; count++) {
+                                 var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
+                                 metricSum += datapointByTime[targetDate] || 0
+                               }
+                              }
+                             else{
                               for(var count = 0; count < periodsToShift; count++) {
                                   var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
                                   metricSum += datapointByTime[targetDate] || 0
                               }
-
+                             }
                               if(actualFrom && datapoint[1]>=actualFrom){
                                   datapoints.push([metricSum/periodsToShift,datapoint[1]])
                               }
@@ -195,7 +209,6 @@ function (angular, _, dateMath, moment) {
                   //     }
                   // });
 
-              });
           });
 
 
@@ -203,9 +216,16 @@ function (angular, _, dateMath, moment) {
       else if (target.queryType === 'Arithmetic') {
           var expression = target.expression;
           var queryLetters = Object.keys(targetsByRefId);
+          // Clean out strings from expression to make letters easier to find
+          var temp = expression.replace(/(['"])(?:[^\\\1]|\\.)*?\1/g, '$1$1');
+          // Regular expression to find letters in the expression
+          var findLetter = new RegExp('(^|[^A-Za-z0-9_.])['+queryLetters.join("")+'](?=[^A-Za-z0-9_]|$)', 'g');
+          // Extract letters used in the expression
+          var expressionLetters = temp.match(findLetter).map(function(v){return v.slice(-1);}).
+                                                         filter(function(v,i,a){return a.indexOf(v)===i;});
 
           promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
-              var functionArgs = queryLetters.join(', ');
+              var functionArgs = ["scopedVars"].concat(queryLetters).join(', ');
               var functionBody = 'return ('+expression+');';
 
               var expressionFunction = new Function(functionArgs, functionBody);
@@ -223,25 +243,42 @@ function (angular, _, dateMath, moment) {
                               var datapoint = resultByQueryMetric.datapoints[k];
                               resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
                               resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                              resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                              resultsHash[datapoint[1]][i][metricName] = datapoint[0];
+                              var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
+                              var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
+                              resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
                           }
                       }
                   }
 
               }
               var datapoints= [];
-              Object.keys(resultsHash).forEach(function (datapointTime) {
-                  var data = resultsHash[datapointTime];
-                  var result = 0;
-                  try {
-                      result = expressionFunction.apply(this,data)
+              Object.keys(resultsHash).sort(function(a,b){return a-b;}).forEach(function(datapointTime){
+                  var data = [options.scopedVars].concat(resultsHash[datapointTime]);
+                  // Check that all required letters are defined in this sample
+                  if (queryLetters.reduce(function(a,d,i){return a && (!(expressionLetters.includes(d)) ||
+                                                                       (typeof data[i+1] !== 'undefined'));},
+                                          true) &&
+                      datapointTime >= dateToMoment(options.range.from, true).valueOf() &&
+                      datapointTime <= dateToMoment(options.range.to, false).valueOf()) {
+                      try {
+                          var result = expressionFunction.apply(this,data);
+                          datapoints.push([result,parseInt(datapointTime)]);
+                      }
+                      catch(err) {
+                          console.log(err);
+                      }
                   }
-                  catch(err) {
-                      console.log(err);
-                  }
-                  datapoints.push([result,parseInt(datapointTime)])
 
               });
+              if (!datapoints.length) {
+                  if (expressionLetters.length) {
+                      console.log("Expression '"+expression+"' results in no data, do letters " +
+                                  expressionLetters.join() + " all exist?");
+                  } else {
+                      console.log("Expression '"+expression+"' uses no letters and results in no data?");
+                  }
+              }
 
 
               return [{
