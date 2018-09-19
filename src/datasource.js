@@ -48,7 +48,14 @@ function (angular, _, dateMath, moment) {
         var promise = null;
         var opt = angular.copy(options);
 
+
         if (dsName === _this.name) {
+          if(targetsByRefId[targets[0].query]==undefined){
+            targetsByRefId=options.targetsByRefId;
+            var query=targets[0].query
+            //targets[targets.length]=targetsByRefId[query]
+            dsName=targetsByRefId[query].datasource
+          }
           promise = _this._doQuery(targets, promisesByRefId, opt, targetsByRefId);
         }
         else{
@@ -71,6 +78,7 @@ function (angular, _, dateMath, moment) {
           }
           promisesByRefId[target.refId] = nonHiddenTargetPromise;
           targetsByRefId[target.refId] = target
+options.targetsByRefId=targetsByRefId;
         });
         promises.push(promise)
       });
@@ -203,16 +211,9 @@ function (angular, _, dateMath, moment) {
       else if (target.queryType === 'Arithmetic') {
           var expression = target.expression;
           var queryLetters = Object.keys(targetsByRefId);
-          // Clean out strings from expression to make letters easier to find
-          var temp = expression.replace(/(['"])(?:[^\\\1]|\\.)*?\1/g, '$1$1');
-          // Regular expression to find letters in the expression
-          var findLetter = new RegExp('(^|[^A-Za-z0-9_.])['+queryLetters.join("")+'](?=[^A-Za-z0-9_]|$)', 'g');
-          // Extract letters used in the expression
-          var expressionLetters = temp.match(findLetter).map(function(v){return v.slice(-1);}).
-                                                         filter(function(v,i,a){return a.indexOf(v)===i;});
 
           promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
-              var functionArgs = ["scopedVars"].concat(queryLetters).join(', ');
+              var functionArgs = queryLetters.join(', ');
               var functionBody = 'return ('+expression+');';
 
               var expressionFunction = new Function(functionArgs, functionBody);
@@ -230,42 +231,25 @@ function (angular, _, dateMath, moment) {
                               var datapoint = resultByQueryMetric.datapoints[k];
                               resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
                               resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                              resultsHash[datapoint[1]][i][metricName] = datapoint[0];
-                              var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
-                              var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
-                              resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
+                              resultsHash[datapoint[1]][i][metricName] = datapoint[0]
                           }
                       }
                   }
 
               }
               var datapoints= [];
-              Object.keys(resultsHash).sort(function(a,b){return a-b;}).forEach(function(datapointTime){
-                  var data = [options.scopedVars].concat(resultsHash[datapointTime]);
-                  // Check that all required letters are defined in this sample
-                  if (queryLetters.reduce(function(a,d,i){return a && (!(expressionLetters.includes(d)) ||
-                                                                       (typeof data[i+1] !== 'undefined'));},
-                                          true) &&
-                      datapointTime >= dateToMoment(options.range.from, true).valueOf() &&
-                      datapointTime <= dateToMoment(options.range.to, false).valueOf()) {
-                      try {
-                          var result = expressionFunction.apply(this,data);
-                          datapoints.push([result,parseInt(datapointTime)]);
-                      }
-                      catch(err) {
-                          console.log(err);
-                      }
+              Object.keys(resultsHash).forEach(function (datapointTime) {
+                  var data = resultsHash[datapointTime];
+                  var result = 0;
+                  try {
+                      result = expressionFunction.apply(this,data)
                   }
+                  catch(err) {
+                      console.log(err);
+                  }
+                  datapoints.push([result,parseInt(datapointTime)])
 
               });
-              if (!datapoints.length) {
-                  if (expressionLetters.length) {
-                      console.log("Expression '"+expression+"' results in no data, do letters " +
-                                  expressionLetters.join() + " all exist?");
-                  } else {
-                      console.log("Expression '"+expression+"' uses no letters and results in no data?");
-                  }
-              }
 
 
               return [{
