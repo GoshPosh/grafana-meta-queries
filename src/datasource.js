@@ -1,5 +1,4 @@
-/*
- * Copyright 2014-2015 Quantiply Corporation. All rights reserved.
+/*opyright 2014-2015 Quantiply Corporation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,11 +145,32 @@ function (angular, _, dateMath, moment) {
           var query = target.query;
           var metric = target.metric;
           var periodsToShiftTemp = 0
+          var MA_on_MA=false
+
           if(target.datasource==targetsByRefId[query].datasource){
-              metric=targetsByRefId[query].metric
-              periodsToShiftTemp=Math.abs(targetsByRefId[query].periods)+periodsToShift
-              query=targetsByRefId[query].query
-              options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShiftTemp-1,'days').toDate();
+            if(target.queryType==targetsByRefId[query].queryType ){
+                periodsToShiftTemp=Math.abs(targetsByRefId[query].periods)+periodsToShift
+                query=targetsByRefId[query].query
+                metric=targetsByRefId[query].metric
+                while(targetsByRefId[query].periods!=undefined){
+                     MA_on_MA=true
+                     if(target.periods!=(Math.abs(targetsByRefId[query].periods))){
+                       if(Math.abs(targetsByRefId[query].periods)>7) periodsToShiftTemp=Math.abs(targetsByRefId[query].periods)+periodsToShift
+                       else periodsToShiftTemp+=periodsToShift
+                     }
+                     query=targetsByRefId[query].query
+                    }
+                  }
+             if(targetsByRefId[query].metric!=undefined){
+                metric=targetsByRefId[query].metric
+                periodsToShiftTemp=Math.abs(targetsByRefId[query].periods)+periodsToShift
+                query=targetsByRefId[query].query
+               }
+
+               if( MA_on_MA==true)
+                 options.range.from._d = dateToMoment(options.range.from, false).subtract((periodsToShiftTemp+periodsToShift)-1,'days').toDate();
+               else
+                 options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShiftTemp-1,'days').toDate();
           }
 
           else{
@@ -171,6 +191,7 @@ function (angular, _, dateMath, moment) {
                 var actualFrom = results[0]['data'][0]['datapoints'][0][1]
               }
                   var datapoints = []
+                  var tmpData = []
                   var data = results[1].data;
                   data.forEach(function (datum) {
                       if(datum.target===metric){
@@ -180,7 +201,7 @@ function (angular, _, dateMath, moment) {
 
                               var metricSum = 0;
                               if(periodsToShiftTemp!=0){
-                               for(var count = periodsToShift; count < periodsToShiftTemp; count++) {
+                               for(var count = periodsToShiftTemp-periodsToShift; count < periodsToShiftTemp; count++) {
                                  var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
                                  metricSum += datapointByTime[targetDate] || 0
                                }
@@ -194,9 +215,25 @@ function (angular, _, dateMath, moment) {
                               if(actualFrom && datapoint[1]>=actualFrom){
                                   datapoints.push([metricSum/periodsToShift,datapoint[1]])
                               }
+                              if(MA_on_MA==true){
+                                tmpData.push([metricSum/periodsToShift,datapoint[1]])
+                              }
                           })
                       }
                   });
+
+                  if(MA_on_MA==true){
+                    var finalMetric=0
+                    for(var count=tmpData.length-1;count>7;count--){
+                      finalMetric=0;
+                      for (var j=0;j<7;j++){
+                        finalMetric += tmpData[count-j][0]
+                      }
+                      if(actualFrom && tmpData[count][1]>=actualFrom){
+                       datapoints.push([finalMetric/periodsToShift,tmpData[count][1]])
+                      }
+                    }
+                  }
                   return [{
                       "target": outputMetricName,
                       "datapoints": datapoints,
@@ -208,6 +245,8 @@ function (angular, _, dateMath, moment) {
                   //         metric.datapoints[0][1] = fromMs;
                   //     }
                   // });
+
+          });
 
           });
 
@@ -324,3 +363,4 @@ function (angular, _, dateMath, moment) {
       MetaQueriesDatasource: MetaQueriesDatasource
   };
 });
+
