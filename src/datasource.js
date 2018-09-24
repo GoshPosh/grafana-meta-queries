@@ -145,7 +145,31 @@ function (angular, _, dateMath, moment) {
       }
       else if (target.queryType === 'MovingAverage') {
 
-          promise = moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName, promisesByRefId)
+          promise = moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName).then(function(results){
+              return promisesByRefId[results.actual_query].then(function(actual_query_results){
+                  var datapoints = []
+                  var actualFrom = null
+                  if(actual_query_results['data'][0]['datapoints'][0]!=undefined) {
+                      actualFrom = actual_query_results['data'][0]['datapoints'][0][1]
+                  }
+                  results.data.forEach(function (datum) {
+                      datum.datapoints.forEach(function (datapoint) {
+                          if(actualFrom && datapoint[1]>=actualFrom)
+                            datapoints.push(datapoint)
+                      })
+                  })
+
+                  return {
+                      data: [{
+                          "target": outputMetricName,
+                          "datapoints": datapoints,
+                          "hide" : target.hide
+                      }]
+                  }
+
+
+              })
+          })
 
       }
       else if (target.queryType === 'Arithmetic') {
@@ -226,7 +250,7 @@ function (angular, _, dateMath, moment) {
 
 
 
-    function moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName, promisesByRefId){
+    function moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName){
         var promise = null;
           var periodsToShift = target.periods;
         var query = target.query;
@@ -241,16 +265,9 @@ function (angular, _, dateMath, moment) {
         options.targets = [metaTarget]
 
         promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-            return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
-//              when plotting moving average the first data point does not show up. That leaves with broken graph in the beginning.
-//              We are calculating actualFrom from the first timestamp from the original promise query and then pushing datapoints whose timestamps that are greater or equal to actualFrom
-                if(results[0]['data'][0]['datapoints'][0]==undefined) {
-                    var actualFrom = null
-                }else{
-                    var actualFrom = results[0]['data'][0]['datapoints'][0][1]
-                }
+            return ds.query(options).then(function(result) {
                 var datapoints = []
-                var data = results[1].data;
+                var data = result.data;
                 data.forEach(function (datum) {
                     if(datum.target===metric){
                         var datapointByTime = {};
@@ -263,9 +280,7 @@ function (angular, _, dateMath, moment) {
                                 metricSum += datapointByTime[targetDate] || 0
                             }
 
-                            if(actualFrom && datapoint[1]>=actualFrom){
-                                datapoints.push([metricSum/periodsToShift,datapoint[1]])
-                            }
+                            datapoints.push([metricSum/periodsToShift,datapoint[1]])
                         })
                     }
                 });
@@ -274,7 +289,8 @@ function (angular, _, dateMath, moment) {
                         "target": outputMetricName,
                         "datapoints": datapoints,
                         "hide" : target.hide
-                    }]
+                    }],
+                    actual_query: query
                 };
                 // var fromMs = formatTimestamp(from);
                 // metrics.forEach(function (metric) {
