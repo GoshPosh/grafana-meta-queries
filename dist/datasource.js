@@ -252,7 +252,8 @@ function (angular, _, dateMath, moment) {
 
     function moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName){
         var promise = null;
-          var periodsToShift = target.periods;
+        var metaTargetPromise = null;
+        var periodsToShift = target.periods;
         var query = target.query;
         var metric = target.metric;
 
@@ -264,8 +265,15 @@ function (angular, _, dateMath, moment) {
         metaTarget.hide = false;
         options.targets = [metaTarget]
 
-        promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-            return ds.query(options).then(function(result) {
+        metaTargetPromise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
+            if(ds.constructor.name === "MetaQueriesDatasource"){
+                return moving_average(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
+            }
+            else{
+                return ds.query(options)
+            }
+        });
+        promise  = metaTargetPromise.then(function (result) {
                 var datapoints = []
                 var data = result.data;
                 data.forEach(function (datum) {
@@ -290,7 +298,7 @@ function (angular, _, dateMath, moment) {
                         "datapoints": datapoints,
                         "hide" : target.hide
                     }],
-                    actual_query: query
+                    actual_query: result.actual_query || query
                 };
                 // var fromMs = formatTimestamp(from);
                 // metrics.forEach(function (metric) {
@@ -300,7 +308,6 @@ function (angular, _, dateMath, moment) {
                 // });
 
             });
-        });
         return promise;
     }
 
