@@ -103,8 +103,8 @@ function (angular, _, dateMath, moment) {
 
       if (target.queryType === 'TimeShift') {
           promise = timeshift(target, options, targetsByRefId, datasourceSrv, outputMetricName).then(function(results){
-              return promisesByRefId[results.actual_query].then(function(actual_query_results){
-                   return filter_datapoints(target, outputMetricName, results, actual_query_results)
+              return promisesByRefId[results.root_query].then(function(root_query_results){
+                   return filter_datapoints(target, outputMetricName, results, root_query_results)
               })
           })
 
@@ -112,8 +112,8 @@ function (angular, _, dateMath, moment) {
       }
       else if (target.queryType === 'MovingAverage') {
           promise = moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName).then(function(results){
-              return promisesByRefId[results.actual_query].then(function(actual_query_results){
-                 return filter_datapoints(target, outputMetricName, results, actual_query_results)
+              return promisesByRefId[results.root_query].then(function(root_query_results){
+                 return filter_datapoints(target, outputMetricName, results, root_query_results)
               })
           })
 
@@ -201,7 +201,7 @@ function (angular, _, dateMath, moment) {
                         "datapoints": datapoints,
                         "hide" : target.hide
                     }],
-                    actual_query: result.actual_query || query
+                    root_query: result.root_query || query
                 };
                 // var fromMs = formatTimestamp(from);
                 // metrics.forEach(function (metric) {
@@ -259,7 +259,7 @@ function (angular, _, dateMath, moment) {
                         "datapoints": datapoints,
                         "hide": target.hide
                     }],
-                    actual_query: result.actual_query || query
+                    root_query: result.root_query || query
                 };
                 // var fromMs = formatTimestamp(from);
                 // metrics.forEach(function (metric) {
@@ -323,12 +323,12 @@ function (angular, _, dateMath, moment) {
             };
     }
 
-    function filter_datapoints(target, outputMetricName, results, actual_query_results){
+    function filter_datapoints(target, outputMetricName, results, root_query_results){
 
          var datapoints = []
          var actualFrom = null
-         if(actual_query_results['data'][0]['datapoints'][0]!=undefined) {
-          actualFrom = actual_query_results['data'][0]['datapoints'][0][1]
+         if(root_query_results['data'][0]['datapoints'][0]!=undefined) {
+          actualFrom = root_query_results['data'][0]['datapoints'][0][1]
          }
          results.data.forEach(function (datum) {
            datum.datapoints.forEach(function (datapoint) {
