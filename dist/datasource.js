@@ -101,46 +101,8 @@ function (angular, _, dateMath, moment) {
 
       var outputMetricName = target.outputMetricName;
       if (target.queryType === 'TimeShift') {
-        var periodsToShift = target.periods;
-        var query = target.query;
-        var metric = target.metric;
 
-
-
-        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,'days').toDate();
-        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,'days').toDate();
-        var metaTarget = angular.copy(targetsByRefId[query]);
-        metaTarget.hide = false;
-        options.targets = [metaTarget]
-
-        promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-            return ds.query(options).then(function (result) {
-              var datapoints = []
-              var data = result.data;
-              data.forEach(function (datum) {
-                  if(datum.target===metric){
-                    datum.datapoints.forEach(function (datapoint) {
-                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,'days').toDate().getTime();
-                        datapoints.push(datapoint)
-                    })
-                  }
-              });
-                return {
-                    data: [{
-                        "target": outputMetricName,
-                        "datapoints": datapoints,
-                        "hide": target.hide
-                    }]
-                };
-                // var fromMs = formatTimestamp(from);
-                // metrics.forEach(function (metric) {
-                //     if (!_.isEmpty(metric.datapoints[0]) && metric.datapoints[0][1] < fromMs) {
-                //         metric.datapoints[0][1] = fromMs;
-                //     }
-                // });
-
-            });
-          });
+        promise = timeshift(target, options, targetsByRefId, datasourceSrv, outputMetricName);
 
       }
       else if (target.queryType === 'MovingAverage') {
@@ -297,6 +259,60 @@ function (angular, _, dateMath, moment) {
                         "target": outputMetricName,
                         "datapoints": datapoints,
                         "hide" : target.hide
+                    }],
+                    actual_query: result.actual_query || query
+                };
+                // var fromMs = formatTimestamp(from);
+                // metrics.forEach(function (metric) {
+                //     if (!_.isEmpty(metric.datapoints[0]) && metric.datapoints[0][1] < fromMs) {
+                //         metric.datapoints[0][1] = fromMs;
+                //     }
+                // });
+
+            });
+        return promise;
+    }
+
+    function timeshift(target, options, targetsByRefId, datasourceSrv, outputMetricName ){
+
+        var promise = null;
+        var metaTargetPromise = null;
+        var periodsToShift = target.periods;
+        var query = target.query;
+        var metric = target.metric;
+
+        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,'days').toDate();
+        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,'days').toDate();
+
+        var metaTarget = angular.copy(targetsByRefId[query]);
+        metaTarget.hide = false;
+        options.targets = [metaTarget]
+
+        metaTargetPromise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
+            if(ds.constructor.name === "MetaQueriesDatasource"){
+                return timeshift(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
+            }
+            else{
+                return ds.query(options)
+            }
+        });
+
+        promise = metaTargetPromise.then(function (result) {
+              var datapoints = []
+              var data = result.data;
+              data.forEach(function (datum) {
+                  if(datum.target===metric){
+                    datum.datapoints.forEach(function (datapoint) {
+                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,'days').toDate().getTime();
+                        datapoints.push(datapoint)
+                    })
+                  }
+              });
+                return {
+                    data: [{
+                        "target": outputMetricName,
+                        "datapoints": datapoints,
+                        "hide": target.hide
                     }],
                     actual_query: result.actual_query || query
                 };
