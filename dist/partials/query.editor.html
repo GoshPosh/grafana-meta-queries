@@ -14,13 +14,31 @@
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label query-keyword width-10">
-        Output Name
+      <label class="gf-form-label query-keyword">
+        Alias
         <a bs-tooltip="ctrl.errors.outputMetricName" style="color: rgb(229, 189, 28)" ng-show="ctrl.errors.outputMetricName">
           <i class="fa fa-warning"></i>
         </a>
       </label>
-      <input type="text" class="input-small gf-form-input width-10" spellcheck='false' ng-model="ctrl.target.outputMetricName" ng-blur="ctrl.targetBlur()" placeholder="metric name" data-min-length=1>
+      <input type="text" class="input-small gf-form-input width-10" spellcheck='false' ng-model="ctrl.target.outputMetricName" ng-blur="ctrl.targetBlur()" placeholder="alias patterns" data-min-length=1>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword">
+        Order
+      </label>
+      <div class="gf-form-select-wrapper max-width-15">
+        <select ng-model="ctrl.target.orderType" class="gf-form-input" ng-options="type for type in ctrl.orderTypes" ng-change="ctrl.targetBlur()">
+        </select>
+      </div>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword">
+        Size
+      </label>
+      <div class="gf-form-select-wrapper max-width-15">
+        <select ng-model="ctrl.target.orderSize" class="gf-form-input" ng-options="o.id as o.name for o in ctrl.orderSizes" ng-change="ctrl.targetBlur()">
+        </select>
+      </div>
     </div>
     <div class="gf-form gf-form--grow">
       <div class="gf-form-label gf-form-label--grow"></div>
