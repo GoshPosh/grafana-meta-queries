@@ -23,6 +23,8 @@ export declare class MetaQueriesQueryCtrl extends QueryCtrl {
     customGranularity: any;
     target: any;
     datasource: any;
+    orderTypes: any;
+    orderSizes: any;
     queryTypeValidators: {
         "TimeShift": any;
         "MovingAverage": any;
