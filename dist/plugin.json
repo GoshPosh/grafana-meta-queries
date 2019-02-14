@@ -6,6 +6,10 @@
   "metrics": true,
   "mixed" : true,
 
+  "queryOptions": {
+	    "minInterval": true
+	  },
+	
   "info": {
     "version": "0.0.1",
     "author": {
