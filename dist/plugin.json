@@ -5,6 +5,7 @@
 
   "metrics": true,
   "mixed" : true,
+  "hiddenQueries": true,
 
   "queryOptions": {
 	    "minInterval": true
