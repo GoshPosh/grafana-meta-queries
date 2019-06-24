@@ -38,6 +38,8 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
 
     defaultPeriods = 7;
 
+    defaultUnit = "days";
+
   /** @ngInject **/
   constructor($scope, $injector, $q) {
     super($scope, $injector);
@@ -51,6 +53,9 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
 
       if (!this.target.periods) {
         this.clearPeriods();
+      }
+      if (!this.target.units) {
+      this.target.units = this.defaultUnit;
       }
 
     this.getQueryLetters = (query, callback) => {

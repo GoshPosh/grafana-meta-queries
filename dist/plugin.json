@@ -8,11 +8,11 @@
   "hiddenQueries": true,
 
   "queryOptions": {
-	    "minInterval": true
-	  },
-	
+    "minInterval": true
+  },
+
   "info": {
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": {
       "name": "Gaurav Shah",
       "url": "https://github.com/GoshPosh/grafana-meta-queries"
