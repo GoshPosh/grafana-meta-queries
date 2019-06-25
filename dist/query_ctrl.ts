@@ -55,7 +55,7 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
         this.clearPeriods();
       }
       if (!this.target.units) {
-      this.target.units = this.defaultUnit;
+        this.target.units = this.defaultUnit;
       }
 
     this.getQueryLetters = (query, callback) => {
