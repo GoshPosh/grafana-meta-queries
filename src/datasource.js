@@ -221,10 +221,10 @@ function (angular, _, dateMath, moment) {
         var periodsToShift = target.periods;
         var query = target.query;
         var metric = target.metric;
-        var unit = target.unit;
+        var timeshiftUnit = target.timeshiftUnit;
 
-        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,unit).toDate();
-        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,unit).toDate();
+        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,timeshiftUnit).toDate();
+        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,timeshiftUnit).toDate();
 
         var metaTarget = angular.copy(targetsByRefId[query]);
         metaTarget.hide = false;
@@ -249,7 +249,7 @@ function (angular, _, dateMath, moment) {
               data.forEach(function (datum) {
                   if(datum.target===metric){
                     datum.datapoints.forEach(function (datapoint) {
-                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,unit).toDate().getTime();
+                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,timeshiftUnit).toDate().getTime();
                         datapoints.push(datapoint)
                     })
                   }

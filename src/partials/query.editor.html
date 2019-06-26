@@ -51,10 +51,10 @@
         Unit
       </label>
       <div class="gf-form-select-wrapper max-width-15">
-        <select ng-model="ctrl.target.unit" class="gf-form-input" ng-options="unit for unit in ['seconds', 'minutes', 'hours', 'days', 'weeks', 'months']" ng-change="ctrl.targetBlur()">
+        <select ng-model="ctrl.target.timeshiftUnit" class="gf-form-input" ng-options="timeshiftUnit for timeshiftUnit in ['seconds', 'minutes', 'hours', 'days', 'weeks', 'months']" ng-change="ctrl.targetBlur()">
         </select>
       </div>
-      <label class="gf-form-label" bs-tooltip="ctrl.target.errors.unit" style="color: rgb(229, 189, 28)" ng-show="ctrl.target.errors.unit">
+      <label class="gf-form-label" bs-tooltip="ctrl.target.errors.timeshiftUnit" style="color: rgb(229, 189, 28)" ng-show="ctrl.target.errors.timeshiftUnit">
         <i class="fa fa-warning"></i>
       </label>
     </div>
