@@ -19,6 +19,7 @@ var MetaQueriesQueryCtrl = (function (_super) {
         };
         this.defaultQueryType = "TimeShift";
         this.defaultPeriods = 7;
+        this.defaultTimeshiftUnit = "days";
         if (!this.target.queryType) {
             this.target.queryType = this.defaultQueryType;
         }
@@ -26,6 +27,9 @@ var MetaQueriesQueryCtrl = (function (_super) {
         this.errors = this.validateTarget();
         if (!this.target.periods) {
             this.clearPeriods();
+        }
+        if (!this.target.timeshiftUnit) {
+            this.target.timeshiftUnit = this.defaultTimeshiftUnit;
         }
         this.getQueryLetters = function (query, callback) {
             return _this.datasource.getTargets()
