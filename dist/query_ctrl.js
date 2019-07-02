@@ -38,7 +38,7 @@ System.register(['lodash', './sdk/sdk'], function(exports_1) {
                         this.target.orderType = 'Top';
                     }
                     this.orderTypes = ['Top', 'Bottom'];
-                    if (!this.target.orderSize) {
+                    if (this.target.orderSize == undefined || this.target.orderSize == null) {
                         this.target.orderSize = 5;
                     }
                     this.orderSizes = [

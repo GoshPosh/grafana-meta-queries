@@ -376,7 +376,7 @@ function (angular, _, dateMath, moment) {
                 }
             });
 
-            if (orderSize > resultsTotalList.length) {
+            if (orderSize > resultsTotalList.length || orderSize == 0) {
                 orderSize = resultsTotalList.length;
             }
 
