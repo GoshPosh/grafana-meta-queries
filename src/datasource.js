@@ -306,7 +306,13 @@ function (angular, _, dateMath, moment) {
                     var groupByValues = Object.values(resultByQueryMetric.props);
 
                     if (groupByValues instanceof Array && groupByValues.length > 0) {
-                        resultsTitle = groupByValues[0];
+                        if(outputMetricName) {
+                            resultsTitle = outputMetricName + " ";
+                        }
+                        for(var k = 0; k < groupByValues.length; k++) {
+                            if(k) resultsTitle += " ";
+                            resultsTitle += groupByValues[k];
+                        }
                     }
                 }
 
