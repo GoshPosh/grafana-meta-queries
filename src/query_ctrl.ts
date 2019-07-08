@@ -57,7 +57,7 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
     
     this.orderTypes = ['Top', 'Bottom'];
  
-    if (this.target.orderSize == undefined || this.target.orderSize == null) {
+    if (!this.target.orderSize && this.target.orderSize !== 0) {
       this.target.orderSize = 5;
     }
  
