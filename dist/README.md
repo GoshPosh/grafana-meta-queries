@@ -22,7 +22,8 @@ Create a new datasource with a name and select `type` as `MetaQueries`
 ## Examples
 #### Arithmetic
 Lets you perform arithmetic operations on one or more existing queries.
-![Screenshot](https://github.com/sunnut/grafana-meta-queries/blob/master/img/arithmetic-ex.jpg?raw=true "Arithmetic Example - Metric A + Metric B")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/arithmetic-ex1.png?raw=true "Arithmetic Example 1 - Metric * 2")
+![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/arithmetic-ex2.png?raw=true "Arithmetic Example 2 - Metric A + Metric B")
 
 #### Moving Average
 ![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/moving_average-ex1.png?raw=true "Moving Average Example 1 - 7 period moving average of Metric A ")
