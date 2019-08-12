@@ -22,6 +22,7 @@
     "url": "https://github.com/GoshPosh/grafana-meta-queries/issues"
   },
   "devDependencies": {
+    "braces": "~2.3.2",
     "grunt": "~0.4.5",
     "grunt-cli": "1.2.0",
     "load-grunt-tasks": "3.5.2",
