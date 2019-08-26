@@ -33,6 +33,14 @@ function (angular, _, dateMath, moment) {
       });
     };
 
+    // cant use angular.copy because of https://github.com/angular/angular.js/issues/8726
+    function simpleHashCopyForPromises(object){
+        var copiedObject = {};
+        Object.keys(object).forEach(function (key) {
+            copiedObject[key] = object[key]
+        });
+        return copiedObject;
+    }
 
     // Called once per panel (graph)
     this.query = function(options) {
@@ -47,26 +55,31 @@ function (angular, _, dateMath, moment) {
       _.forEach(sets, function (targets, dsName) {
         var promise = null;
         var opt = angular.copy(options);
+        var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
+        var _targetsByRefId = simpleHashCopyForPromises(targetsByRefId);
 
-        if (dsName === _this.name) {
-          promise = _this._doQuery(targets, promisesByRefId, opt, targetsByRefId);
-        }
-        else{
-          promise = _this.datasourceSrv.get(dsName).then(function (ds) {
-            opt.targets = targets;
-            return ds.query(opt);
-          });
-        }
+        promise = _this.datasourceSrv.get(dsName).then(function (ds) {
+          if (ds.meta.id === _this.meta.id) {
+              return _this._doQuery(targets, _promisesByRefId, opt, _targetsByRefId)
+          }
+          else{
+              opt.targets = targets;
+              return ds.query(opt);
+          }
+
+        });
 
 
         _.forEach(targets,function(target){
           var  nonHiddenTargetPromise = promise;
-          if(dsName !== _this.name && target.hide===true){
+          if(target.hide===true){
               nonHiddenTargetPromise = _this.datasourceSrv.get(dsName).then(function (ds) {
-                  var nonHiddenTarget = angular.copy(target);
-                  nonHiddenTarget.hide = false;
-                  opt.targets = [nonHiddenTarget];
-                  return ds.query(opt);
+                  if (ds.meta.id !== _this.meta.id) {
+                      var nonHiddenTarget = angular.copy(target);
+                      nonHiddenTarget.hide = false;
+                      opt.targets = [nonHiddenTarget];
+                      return ds.query(opt);
+                  }
               });
           }
           promisesByRefId[target.refId] = nonHiddenTargetPromise;
