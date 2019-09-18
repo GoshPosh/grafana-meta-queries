@@ -23,7 +23,9 @@ function (angular, _, dateMath, moment) {
   'use strict';
 
   /** @ngInject */
-  function MetaQueriesDatasource($q, datasourceSrv) {
+  function MetaQueriesDatasource(instanceSettings, $q, datasourceSrv) {
+    this.id = instanceSettings.id;
+    this.name = instanceSettings.name;
     this.datasourceSrv = datasourceSrv;
     this.$q = $q;
 
