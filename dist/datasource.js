@@ -33,6 +33,14 @@ function (angular, _, dateMath, moment) {
       });
     };
 
+    // cant use angular.copy because of https://github.com/angular/angular.js/issues/8726
+    function simpleHashCopyForPromises(object){
+        var copiedObject = {};
+        Object.keys(object).forEach(function (key) {
+            copiedObject[key] = object[key]
+        });
+        return copiedObject;
+    }
 
     // Called once per panel (graph)
     this.query = function(options) {
@@ -47,26 +55,31 @@ function (angular, _, dateMath, moment) {
       _.forEach(sets, function (targets, dsName) {
         var promise = null;
         var opt = angular.copy(options);
+        var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
+        var _targetsByRefId = simpleHashCopyForPromises(targetsByRefId);
 
-        if (dsName === _this.name) {
-          promise = _this._doQuery(targets, promisesByRefId, opt, targetsByRefId);
-        }
-        else{
-          promise = _this.datasourceSrv.get(dsName).then(function (ds) {
-            opt.targets = targets;
-            return ds.query(opt);
-          });
-        }
+        promise = _this.datasourceSrv.get(dsName).then(function (ds) {
+          if (ds.meta.id === _this.meta.id) {
+              return _this._doQuery(targets, _promisesByRefId, opt, _targetsByRefId)
+          }
+          else{
+              opt.targets = targets;
+              return ds.query(opt);
+          }
+
+        });
 
 
         _.forEach(targets,function(target){
           var  nonHiddenTargetPromise = promise;
-          if(dsName !== _this.name && target.hide===true){
+          if(target.hide===true){
               nonHiddenTargetPromise = _this.datasourceSrv.get(dsName).then(function (ds) {
-                  var nonHiddenTarget = angular.copy(target);
-                  nonHiddenTarget.hide = false;
-                  opt.targets = [nonHiddenTarget];
-                  return ds.query(opt);
+                  if (ds.meta.id !== _this.meta.id) {
+                      var nonHiddenTarget = angular.copy(target);
+                      nonHiddenTarget.hide = false;
+                      opt.targets = [nonHiddenTarget];
+                      return ds.query(opt);
+                  }
               });
           }
           promisesByRefId[target.refId] = nonHiddenTargetPromise;
@@ -100,36 +113,109 @@ function (angular, _, dateMath, moment) {
       var promise = null;
 
       var outputMetricName = target.outputMetricName;
+
       if (target.queryType === 'TimeShift') {
+          promise = timeshift(target, options, targetsByRefId, datasourceSrv, outputMetricName).then(function(results){
+              return promisesByRefId[results.root_query].then(function(root_query_results){
+                   return filter_datapoints(target, outputMetricName, results, root_query_results)
+              })
+          })
+
+
+      }
+      else if (target.queryType === 'MovingAverage') {
+          promise = moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName).then(function(results){
+              return promisesByRefId[results.root_query].then(function(root_query_results){
+                 return filter_datapoints(target, outputMetricName, results, root_query_results)
+              })
+          })
+
+      }
+      else if (target.queryType === 'Arithmetic') {
+
+          promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
+            return arithmetic(target, targetsByRefId, outputMetricName, results)
+          });
+
+      }
+
+
+      promisesByRefId[target.refId] = promise;
+      metaQueryPromises.push(promise);
+      targetsByRefId[target.refId]= target;
+
+      });
+
+        return this.$q.all(metaQueryPromises).then(function (results) {
+            return { data: _.flatten(_.map(results, 'data')) };
+        });
+
+    };
+
+
+    function dateToMoment(date, roundUp) {
+      if (date === 'now') {
+        return moment();
+      }
+      date = dateMath.parse(date, roundUp);
+      return moment(date.valueOf());
+    }
+
+
+
+    function moving_average(target, options, targetsByRefId, datasourceSrv, outputMetricName){
+        var promise = null;
+        var metaTargetPromise = null;
         var periodsToShift = target.periods;
         var query = target.query;
         var metric = target.metric;
 
 
 
-        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,'days').toDate();
-        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,'days').toDate();
+        options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+
         var metaTarget = angular.copy(targetsByRefId[query]);
         metaTarget.hide = false;
         options.targets = [metaTarget]
 
-        promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-            return ds.query(options).then(function (result) {
-              var datapoints = []
-              var data = result.data;
-              data.forEach(function (datum) {
-                  if(datum.target===metric){
-                    datum.datapoints.forEach(function (datapoint) {
-                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,'days').toDate().getTime();
-                        datapoints.push(datapoint)
-                    })
-                  }
-              });
-              return [{
-                "target": outputMetricName,
-                 "datapoints": datapoints,
-                  "hide" : target.hide
-              }];
+        metaTargetPromise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
+            if(ds.constructor.name === "MetaQueriesDatasource" && targetsByRefId[query].queryType=="MovingAverage"){
+                return moving_average(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
+            }
+            if(ds.constructor.name === "MetaQueriesDatasource" && targetsByRefId[query].queryType=="TimeShift"){
+                return timeshift(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
+            }
+            else{
+                return ds.query(options)
+            }
+        });
+        promise  = metaTargetPromise.then(function (result) {
+                var datapoints = []
+                var data = result.data;
+                data.forEach(function (datum) {
+                    if(datum.target===metric){
+                        var datapointByTime = {};
+                        datum.datapoints.forEach(function (datapoint) {
+                            datapointByTime[datapoint[1]] = datapoint[0];
+
+                            var metricSum = 0;
+                            for(var count = 0; count < periodsToShift; count++) {
+                                var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
+                                metricSum += datapointByTime[targetDate] || 0
+                            }
+
+                            datapoints.push([metricSum/periodsToShift,datapoint[1]])
+                        })
+                    }
+                });
+                return {
+                    data: [{
+                        "target": outputMetricName,
+                        "datapoints": datapoints,
+                        "hide" : target.hide
+                    }],
+                    root_query: result.root_query || query
+                };
                 // var fromMs = formatTimestamp(from);
                 // metrics.forEach(function (metric) {
                 //     if (!_.isEmpty(metric.datapoints[0]) && metric.datapoints[0][1] < fromMs) {
@@ -138,69 +224,70 @@ function (angular, _, dateMath, moment) {
                 // });
 
             });
-          });
+        return promise;
+    }
 
-      }
-      else if (target.queryType === 'MovingAverage') {
-          var periodsToShift = target.periods;
-          var query = target.query;
-          var metric = target.metric;
+    function timeshift(target, options, targetsByRefId, datasourceSrv, outputMetricName){
 
+        var promise = null;
+        var metaTargetPromise = null;
+        var periodsToShift = target.periods;
+        var query = target.query;
+        var metric = target.metric;
+        var timeshiftUnit = target.timeshiftUnit;
 
+        options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,timeshiftUnit).toDate();
+        options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,timeshiftUnit).toDate();
 
-          options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+        var metaTarget = angular.copy(targetsByRefId[query]);
+        metaTarget.hide = false;
+        options.targets = [metaTarget]
 
-          var metaTarget = angular.copy(targetsByRefId[query]);
-          metaTarget.hide = false;
-          options.targets = [metaTarget]
+        metaTargetPromise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
+            if(ds.constructor.name === "MetaQueriesDatasource" && targetsByRefId[query].queryType=="TimeShift"){
+                return timeshift(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
+            }
+            if(ds.constructor.name === "MetaQueriesDatasource" && targetsByRefId[query].queryType=="MovingAverage"){
+                return moving_average(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
+            }
 
-          promise = datasourceSrv.get(options.targets[0].datasource).then(function(ds) {
-              return $q.all([promisesByRefId[query],ds.query(options)]).then(function(results) {
-//              when plotting moving average the first data point does not show up. That leaves with broken graph in the beginning.
-//              We are calculating actualFrom from the first timestamp from the original promise query and then pushing datapoints whose timestamps that are greater or equal to actualFrom
-              if(results[0]['data'][0]['datapoints'][0]==undefined) {
-                var actualFrom = null
-              }else{
-                var actualFrom = results[0]['data'][0]['datapoints'][0][1]
-              }
-                  var datapoints = []
-                  var data = results[1].data;
-                  data.forEach(function (datum) {
-                      if(datum.target===metric){
-                          var datapointByTime = {};
-                          datum.datapoints.forEach(function (datapoint) {
-                              datapointByTime[datapoint[1]] = datapoint[0];
+            else{
+                return ds.query(options)
+            }
+        });
 
-                              var metricSum = 0;
-                              for(var count = 0; count < periodsToShift; count++) {
-                                  var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
-                                  metricSum += datapointByTime[targetDate] || 0
-                              }
-
-                              if(actualFrom && datapoint[1]>=actualFrom){
-                                  datapoints.push([metricSum/periodsToShift,datapoint[1]])
-                              }
-                          })
-                      }
-                  });
-                  return [{
-                      "target": outputMetricName,
-                      "datapoints": datapoints,
-                      "hide" : target.hide
-                  }];
-                  // var fromMs = formatTimestamp(from);
-                  // metrics.forEach(function (metric) {
-                  //     if (!_.isEmpty(metric.datapoints[0]) && metric.datapoints[0][1] < fromMs) {
-                  //         metric.datapoints[0][1] = fromMs;
-                  //     }
-                  // });
-
+        promise = metaTargetPromise.then(function (result) {
+              var datapoints = []
+              var data = result.data;
+              data.forEach(function (datum) {
+                  if(datum.target===metric){
+                    datum.datapoints.forEach(function (datapoint) {
+                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,timeshiftUnit).toDate().getTime();
+                        datapoints.push(datapoint)
+                    })
+                  }
               });
-          });
+                return {
+                    data: [{
+                        "target": outputMetricName,
+                        "datapoints": datapoints,
+                        "hide": target.hide
+                    }],
+                    root_query: result.root_query || query
+                };
+                // var fromMs = formatTimestamp(from);
+                // metrics.forEach(function (metric) {
+                //     if (!_.isEmpty(metric.datapoints[0]) && metric.datapoints[0][1] < fromMs) {
+                //         metric.datapoints[0][1] = fromMs;
+                //     }
+                // });
 
+            });
+        return promise;
+    }
 
-      }
-      else if (target.queryType === 'Arithmetic') {
+    function arithmetic(target, targetsByRefId, outputMetricName, results){
+
           var expression = target.expression;
           var queryLetters = Object.keys(targetsByRefId);
           // Clean out strings from expression to make letters easier to find
@@ -267,43 +354,74 @@ function (angular, _, dateMath, moment) {
                   }
               }
 
+          var functionArgs = queryLetters.join(', ');
+          var functionBody = 'return ('+expression+');';
 
-              return [{
-                  "target": outputMetricName,
-                  "datapoints": datapoints,
-                  "hide" : target.hide
-              }];
-          })
-      }
+          var expressionFunction = new Function(functionArgs, functionBody);
 
+          var resultsHash= {};
+          for(var i=0;i<results.length;i++){
+             var resultByQuery = results[i];
+             for(var j=0;j<resultByQuery.data.length;j++){
+               var resultByQueryMetric = resultByQuery.data[j];
+               var metricName = resultByQueryMetric.target;
+               if(resultByQueryMetric.datapoints){
+                 for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
+                   var datapoint = resultByQueryMetric.datapoints[k];
+                   resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                   resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                   resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                 }
+               }
+             }
 
-      var dataWrappedPromise =   promise.then(function (metrics) {
-          return {
-              data: metrics
-          }
-      });
-      promisesByRefId[target.refId] = dataWrappedPromise;
-      metaQueryPromises.push(dataWrappedPromise);
-      targetsByRefId[target.refId]= target;
+           }
+           var datapoints= [];
+           Object.keys(resultsHash).forEach(function (datapointTime) {
+             var data = resultsHash[datapointTime];
+             var result = 0;
+             try {
+               result = expressionFunction.apply(this,data)
+             }
+             catch(err) {
+               console.log(err);
+             }
+             datapoints.push([result,parseInt(datapointTime)])
 
-      });
+           });
 
-        return this.$q.all(metaQueryPromises).then(function (results) {
-            return { data: _.flatten(_.map(results, 'data')) };
-        });
-
-    };
-
-
-    function dateToMoment(date, roundUp) {
-      if (date === 'now') {
-        return moment();
-      }
-      date = dateMath.parse(date, roundUp);
-      return moment(date.valueOf());
+           return {
+             data: [{
+               "target": outputMetricName,
+               "datapoints": datapoints,
+               "hide" : target.hide
+              }]
+            };
     }
 
+    function filter_datapoints(target, outputMetricName, results, root_query_results){
 
+         var datapoints = []
+         var actualFrom = null
+         if(root_query_results['data'][0]['datapoints'][0]!=undefined) {
+          actualFrom = root_query_results['data'][0]['datapoints'][0][1]
+         }
+         results.data.forEach(function (datum) {
+           datum.datapoints.forEach(function (datapoint) {
+             if(actualFrom && datapoint[1]>=actualFrom)
+                datapoints.push(datapoint)
+           })
+          })
+
+         return {
+           data: [{
+             "target": outputMetricName,
+             "datapoints": datapoints,
+             "hide" : target.hide
+            }]
+         }
+
+    }
 
 
   }
