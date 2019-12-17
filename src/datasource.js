@@ -134,7 +134,7 @@ function (angular, _, dateMath, moment) {
       else if (target.queryType === 'Arithmetic') {
 
           promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
-            return arithmetic(target, targetsByRefId, outputMetricName, results)
+            return arithmetic(target, targetsByRefId, outputMetricName, results, options)
           });
 
       }
@@ -286,7 +286,7 @@ function (angular, _, dateMath, moment) {
         return promise;
     }
 
-    function arithmetic(target, targetsByRefId, outputMetricName, results){
+    function arithmetic(target, targetsByRefId, outputMetricName, results, options){
 
           var expression = target.expression;
           var queryLetters = Object.keys(targetsByRefId);
