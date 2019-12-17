@@ -298,105 +298,68 @@ function (angular, _, dateMath, moment) {
           var expressionLetters = temp.match(findLetter).map(function(v){return v.slice(-1);}).
                                                          filter(function(v,i,a){return a.indexOf(v)===i;});
 
-          promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
-              var functionArgs = ["scopedVars"].concat(queryLetters).join(', ');
-              var functionBody = 'return ('+expression+');';
-
-              var expressionFunction = new Function(functionArgs, functionBody);
-
-              var resultsHash= {};
-              for(var i=0;i<results.length;i++){
-
-                  var resultByQuery = results[i];
-
-                  for(var j=0;j<resultByQuery.data.length;j++){
-                      var resultByQueryMetric = resultByQuery.data[j];
-                      var metricName = resultByQueryMetric.target;
-                      if(resultByQueryMetric.datapoints){
-                          for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
-                              var datapoint = resultByQueryMetric.datapoints[k];
-                              resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
-                              resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                              resultsHash[datapoint[1]][i][metricName] = datapoint[0];
-                              var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
-                              var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
-                              resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
-                          }
-                      }
-                  }
-
-              }
-              var datapoints= [];
-              Object.keys(resultsHash).sort(function(a,b){return a-b;}).forEach(function(datapointTime){
-                  var data = [options.scopedVars].concat(resultsHash[datapointTime]);
-                  // Check that all required letters are defined in this sample
-                  if (queryLetters.reduce(function(a,d,i){return a && (!(expressionLetters.includes(d)) ||
-                                                                       (typeof data[i+1] !== 'undefined'));},
-                                          true) &&
-                      datapointTime >= dateToMoment(options.range.from, true).valueOf() &&
-                      datapointTime <= dateToMoment(options.range.to, false).valueOf()) {
-                      try {
-                          var result = expressionFunction.apply(this,data);
-                          datapoints.push([result,parseInt(datapointTime)]);
-                      }
-                      catch(err) {
-                          console.log(err);
-                      }
-                  }
-
-              });
-              if (!datapoints.length) {
-                  if (expressionLetters.length) {
-                      console.log("Expression '"+expression+"' results in no data, do letters " +
-                                  expressionLetters.join() + " all exist?");
-                  } else {
-                      console.log("Expression '"+expression+"' uses no letters and results in no data?");
-                  }
-              }
-
-          var functionArgs = queryLetters.join(', ');
+          var functionArgs = ["scopedVars"].concat(queryLetters).join(', ');
           var functionBody = 'return ('+expression+');';
 
           var expressionFunction = new Function(functionArgs, functionBody);
 
           var resultsHash= {};
           for(var i=0;i<results.length;i++){
-             var resultByQuery = results[i];
-             for(var j=0;j<resultByQuery.data.length;j++){
-               var resultByQueryMetric = resultByQuery.data[j];
-               var metricName = resultByQueryMetric.target;
-               if(resultByQueryMetric.datapoints){
-                 for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
-                   var datapoint = resultByQueryMetric.datapoints[k];
-                   resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
-                   resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                   resultsHash[datapoint[1]][i][metricName] = datapoint[0]
-                 }
-               }
-             }
 
-           }
-           var datapoints= [];
-           Object.keys(resultsHash).forEach(function (datapointTime) {
-             var data = resultsHash[datapointTime];
-             var result = 0;
-             try {
-               result = expressionFunction.apply(this,data)
-             }
-             catch(err) {
-               console.log(err);
-             }
-             datapoints.push([result,parseInt(datapointTime)])
+              var resultByQuery = results[i];
 
-           });
+              for(var j=0;j<resultByQuery.data.length;j++){
+                  var resultByQueryMetric = resultByQuery.data[j];
+                  var metricName = resultByQueryMetric.target;
+                  if(resultByQueryMetric.datapoints){
+                      for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
+                          var datapoint = resultByQueryMetric.datapoints[k];
+                          resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                          resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                          resultsHash[datapoint[1]][i][metricName] = datapoint[0];
+                          var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
+                          var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
+                          resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
+                      }
+                  }
+              }
+          }
 
-           return {
-             data: [{
-               "target": outputMetricName,
-               "datapoints": datapoints,
-               "hide" : target.hide
+          var datapoints= [];
+          Object.keys(resultsHash).sort(function(a,b){return a-b;}).forEach(function(datapointTime){
+              var data = [options.scopedVars].concat(resultsHash[datapointTime]);
+              // Check that all required letters are defined in this sample
+              if (queryLetters.reduce(function(a,d,i){return a && (!(expressionLetters.includes(d)) ||
+                                                                   (typeof data[i+1] !== 'undefined'));},
+                                      true) &&
+                  datapointTime >= dateToMoment(options.range.from, true).valueOf() &&
+                  datapointTime <= dateToMoment(options.range.to, false).valueOf()) {
+                  try {
+                      var result = expressionFunction.apply(this,data);
+                      datapoints.push([result,parseInt(datapointTime)]);
+                  }
+                  catch(err) {
+                      console.log(err);
+                  }
+              }
+
+          });
+          if (!datapoints.length) {
+              if (expressionLetters.length) {
+                  console.log("Expression '"+expression+"' results in no data, do letters " +
+                              expressionLetters.join() + " all exist?");
+              } else {
+                  console.log("Expression '"+expression+"' uses no letters and results in no data?");
+              }
+          }
+
+          return {
+              data: [{
+                  "target": outputMetricName,
+                  "datapoints": datapoints,
+                  "hide" : target.hide
               }]
-            };
+          }
     }
 
     function filter_datapoints(target, outputMetricName, results, root_query_results){
