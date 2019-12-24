@@ -236,6 +236,9 @@ function (angular, _, dateMath, moment) {
         var metric = target.metric;
         var timeshiftUnit = target.timeshiftUnit;
 
+        if(!timeshiftUnit)
+            timeshiftUnit="days"
+
         options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,timeshiftUnit).toDate();
         options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,timeshiftUnit).toDate();
 
