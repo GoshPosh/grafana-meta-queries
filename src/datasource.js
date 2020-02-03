@@ -317,9 +317,13 @@ function (angular, _, dateMath, moment) {
                           resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
                           resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
                           resultsHash[datapoint[1]][i][metricName] = datapoint[0];
-                          var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
-                          var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
-                          resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
+                          if (resultByQueryMetric.datapoints[k ? k : 1]) {
+                              var timepoint = resultByQueryMetric.datapoints[k ? k : 1][1];
+                              var prevpoint = resultByQueryMetric.datapoints[k ? k-1 : 0][1];
+                              resultsHash[datapoint[1]][i]["__time_delta"] = timepoint - prevpoint;
+                          } else {
+                              resultsHash[datapoint[1]][i]["__time_delta"] = 1
+                          }
                       }
                   }
               }
