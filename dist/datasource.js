@@ -64,7 +64,7 @@ function (angular, _, dateMath, moment) {
           }
           else{
               opt.targets = targets;
-              return ds.query(opt);
+              return ds.query(opt).toPromise();
           }
 
         });
@@ -78,7 +78,7 @@ function (angular, _, dateMath, moment) {
                       var nonHiddenTarget = angular.copy(target);
                       nonHiddenTarget.hide = false;
                       opt.targets = [nonHiddenTarget];
-                      return ds.query(opt);
+                      return ds.query(opt).toPromise();
                   }
               });
           }
