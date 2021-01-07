@@ -65,7 +65,7 @@ function (angular, _, dateMath, moment) {
           else{
               opt.targets = targets;
               var ds_res = ds.query(opt)
-              if(ds_res.toPromise()==undefined){
+              if(ds_res.toPromise==undefined){
                 return ds_res;
               }
               else{
@@ -85,7 +85,7 @@ function (angular, _, dateMath, moment) {
                       nonHiddenTarget.hide = false;
                       opt.targets = [nonHiddenTarget];
                       var ds_res = ds.query(opt)
-                       if(ds_res.toPromise()==undefined){
+                       if(ds_res.toPromise==undefined){
                           return ds_res;
                          }
                         else{
