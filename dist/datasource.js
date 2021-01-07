@@ -64,7 +64,13 @@ function (angular, _, dateMath, moment) {
           }
           else{
               opt.targets = targets;
-              return ds.query(opt);
+              var ds_res = ds.query(opt)
+              if(ds_res.toPromise()==undefined){
+                return ds_res;
+              }
+              else{
+                return ds_res.toPromise();
+              }
           }
 
         });
@@ -78,7 +84,13 @@ function (angular, _, dateMath, moment) {
                       var nonHiddenTarget = angular.copy(target);
                       nonHiddenTarget.hide = false;
                       opt.targets = [nonHiddenTarget];
-                      return ds.query(opt);
+                      var ds_res = ds.query(opt)
+                       if(ds_res.toPromise()==undefined){
+                          return ds_res;
+                         }
+                        else{
+                          return ds_res.toPromise();
+                         }
                   }
               });
           }
