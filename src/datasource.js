@@ -58,6 +58,7 @@ function (angular, _, dateMath, moment) {
         var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
         var _targetsByRefId = simpleHashCopyForPromises(targetsByRefId);
 
+        //grafana 7.x requires to return the ds as promise. Since older plugins doesnt converts to promise Added ds_res.toPromise().
         promise = _this.datasourceSrv.get(dsName).then(function (ds) {
           if (ds.meta.id === _this.meta.id) {
               return _this._doQuery(targets, _promisesByRefId, opt, _targetsByRefId)
@@ -75,7 +76,7 @@ function (angular, _, dateMath, moment) {
 
         });
 
-
+        //grafana 7.x requires to return the ds as promise. Since older plugins doesnt converts to promise Added ds_res.toPromise().
         _.forEach(targets,function(target){
           var  nonHiddenTargetPromise = promise;
           if(target.hide===true){
