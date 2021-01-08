@@ -58,18 +58,25 @@ function (angular, _, dateMath, moment) {
         var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
         var _targetsByRefId = simpleHashCopyForPromises(targetsByRefId);
 
+        //grafana 7.x requires ds_res as promise. Since older plugins doesnt converts to promise, added ds_res.toPromise().
         promise = _this.datasourceSrv.get(dsName).then(function (ds) {
           if (ds.meta.id === _this.meta.id) {
               return _this._doQuery(targets, _promisesByRefId, opt, _targetsByRefId)
           }
           else{
               opt.targets = targets;
-              return ds.query(opt);
+              var ds_res = ds.query(opt);
+              if(ds_res.then){
+                return ds_res;
+                }
+              else{
+                return ds_res.toPromise();
+               }
           }
 
         });
 
-
+        //grafana 7.x requires ds_res as promise. Since older plugins doesnt converts to promise, added ds_res.toPromise().
         _.forEach(targets,function(target){
           var  nonHiddenTargetPromise = promise;
           if(target.hide===true){
@@ -78,7 +85,13 @@ function (angular, _, dateMath, moment) {
                       var nonHiddenTarget = angular.copy(target);
                       nonHiddenTarget.hide = false;
                       opt.targets = [nonHiddenTarget];
-                      return ds.query(opt);
+                      var ds_res = ds.query(opt);
+                      if(ds_res.then){
+                        return ds_res;
+                        }
+                      else{
+                        return ds_res.toPromise();
+                        }
                   }
               });
           }
