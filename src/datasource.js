@@ -42,6 +42,46 @@ function (angular, _, dateMath, moment) {
         return copiedObject;
     }
 
+    // Used to transform the data into table format so that only df shows up
+    function transformDataToTable(data){
+          var resultColumns = [
+              {
+                  "text": "Time",
+                  "type": "time",
+                  "sort": true,
+                  "desc": true,
+              }
+          ]
+
+          var resultRowsHash = {}
+          var resultSeriesIndex = 1
+          data.forEach(function(series){
+              series.datapoints.forEach(function (datapoint) {
+                  if(!resultRowsHash[datapoint[0]]){
+                      resultRowsHash[datapoint[0]] = [datapoint[0]]
+                  }
+                  resultRowsHash[datapoint[0]][resultSeriesIndex] = datapoint[1]
+              })
+              resultColumns.push({
+                  "text": series.target
+              })
+              resultSeriesIndex +=1
+          })
+          var sortedTimePoints =Object.keys(resultRowsHash).sort().reverse()
+          var resultRows = []
+          sortedTimePoints.forEach(function(timePoint){
+              resultRows.push(resultRowsHash[timePoint])
+          })
+          return  [
+              {
+                  "columns": resultColumns,
+                  "rows": resultRows,
+                  "type": "table"
+              }
+          ];
+
+      }
+
     // Called once per panel (graph)
     this.query = function(options) {
       console.log("Do query");
@@ -109,7 +149,7 @@ function (angular, _, dateMath, moment) {
                       return datum.hide!==true;
                   })
               }
-              return data;
+              return transformDataToTable(data);
           }),function(result){return result!==undefined && result!==null})) };
       });
 
