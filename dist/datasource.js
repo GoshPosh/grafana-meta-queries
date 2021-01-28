@@ -18,8 +18,9 @@ define([
   'lodash',
   'app/core/utils/datemath',
   'moment',
+  '@grafana/data/toDataFrame'
 ],
-function (angular, _, dateMath, moment) {
+function (angular, _, dateMath, moment, grafanaData) {
   'use strict';
 
   /** @ngInject */
@@ -109,7 +110,7 @@ function (angular, _, dateMath, moment) {
                       return datum.hide!==true;
                   })
               }
-              return data;
+              return grafanaData.toDataFrame(data);
           }),function(result){return result!==undefined && result!==null})) };
       });
 
