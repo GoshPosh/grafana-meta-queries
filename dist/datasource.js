@@ -109,7 +109,7 @@ function (angular, _, dateMath, moment) {
                       return datum.hide!==true;
                   })
               }
-              return data;
+              return getTableData(data);
           }),function(result){return result!==undefined && result!==null})) };
       });
 
@@ -377,6 +377,29 @@ function (angular, _, dateMath, moment) {
 
     }
 
+  function getTableData(data){
+    var rows = {};
+    var columns = [{
+            "text": "Time",
+            "type": "time",
+            "sort": true,
+            "desc": true,
+          }];
+    data.forEach(item1 => {
+        columns.push({text: item1.target});
+        item1.datapoints.forEach(item2 => {
+            if (rows[item2[1]])
+                rows[item2[1]].push(item2[0]);
+            else
+                rows[item2[1]] = [item2[1], item2[0]]
+        })
+    });
+        return [{
+        columns,
+        rows: Object.values(rows),
+        "type": "table"
+    }]
+  }
 
   }
   return {
