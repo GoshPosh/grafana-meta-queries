@@ -102,7 +102,9 @@ function (angular, _, dateMath, moment) {
       });
 
       return this.$q.all(promises).then(function (results) {
-          return { data: _.flatten(_.filter(_.map(results, function (result) {
+          var formattedResults=[];
+          formattedResults.push({ data: _.flatten(_.map(results, 'data')) })
+          return { data: _.flatten(_.filter(_.map(formattedResults, function (result) {
               var data = result.data;
               if(data){
                   data = _.filter(result.data,function(datum){
