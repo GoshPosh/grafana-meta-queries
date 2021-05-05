@@ -199,7 +199,13 @@ function (angular, _, dateMath, moment) {
                 return timeshift(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
             }
             else{
-                return ds.query(options)
+              var ds_res = ds.query(options);
+              if(ds_res.then){
+                return ds_res;
+                }
+              else{
+                return ds_res.toPromise();
+               }
             }
         });
         promise  = metaTargetPromise.then(function (result) {
@@ -268,7 +274,13 @@ function (angular, _, dateMath, moment) {
             }
 
             else{
-                return ds.query(options)
+              var ds_res = ds.query(options);
+              if(ds_res.then){
+                return ds_res;
+                }
+              else{
+                return ds_res.toPromise();
+               }
             }
         });
 
