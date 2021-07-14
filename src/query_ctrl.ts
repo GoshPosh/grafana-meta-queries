@@ -57,6 +57,9 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
       if (!this.target.timeshiftUnit) {
         this.target.timeshiftUnit = this.defaultTimeshiftUnit;
       }
+      if (!this.target.datasource) {
+        this.target.datasource = this.datasource.meta.name;
+      }
 
     this.getQueryLetters = (query, callback) => {
       return this.datasource.getTargets()
