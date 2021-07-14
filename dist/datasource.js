@@ -53,6 +53,9 @@ function (angular, _, dateMath, moment) {
       var promises = [];
       var targetsByRefId = {};
       _.forEach(sets, function (targets, dsName) {
+        if(dsName=="undefined"){
+            dsName="PM"
+        }
         var promise = null;
         var opt = angular.copy(options);
         var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
@@ -104,7 +107,7 @@ function (angular, _, dateMath, moment) {
       return this.$q.all(promises).then(function (results) {
           return { data: _.flatten(_.filter(_.map(results, function (result) {
               var data = result.data;
-              if(data){
+              if(data && data.length!=0){
                   data = _.filter(result.data,function(datum){
                       return datum.hide!==true;
                   })
