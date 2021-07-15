@@ -53,8 +53,10 @@ function (angular, _, dateMath, moment) {
       var promises = [];
       var targetsByRefId = {};
       _.forEach(sets, function (targets, dsName) {
+      // Grafana (8.x.x) sends datasource name as undefined with mixed plugin made as default datasource
+      // https://github.com/grafana/grafana/issues/36508
         if(dsName=="undefined"){
-            dsName="PM"
+            dsName=_this.datasourceSrv.defaultName
         }
         var promise = null;
         var opt = angular.copy(options);
