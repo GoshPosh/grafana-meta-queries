@@ -18,6 +18,7 @@ Create a new datasource with a name and select `type` as `MetaQueries`
 * Add query of your data source (add a few more)
 * Add query with `MetaQueries` as data source
 * Reference other columns as `A` or `B` depending on what is shown 
+* Useful for Moving Average, Time Shift
 
 ## Examples
 #### Arithmetic
