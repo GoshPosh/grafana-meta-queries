@@ -48,10 +48,17 @@ function (angular, _, dateMath, moment) {
       console.log(options);
 
       var _this = this;
-      var sets = _.groupBy(options.targets, 'datasource');
       var promisesByRefId = {};
       var promises = [];
       var targetsByRefId = {};
+      var sets;
+
+      if (typeof (options.targets[0].datasource) === 'object') {
+        sets = _.groupBy(options.targets, target => target.datasource.uid);
+      } else {
+        sets = _.groupBy(options.targets, 'datasource');
+      }
+
       _.forEach(sets, function (targets, dsName) {
       // Grafana (8.x.x) sends datasource name as undefined with mixed plugin made as default datasource
       // https://github.com/grafana/grafana/issues/36508
