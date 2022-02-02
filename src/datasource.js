@@ -52,6 +52,13 @@ function (angular, _, dateMath, moment) {
       var promisesByRefId = {};
       var promises = [];
       var targetsByRefId = {};
+      var sets;
+
+     if (typeof (options.targets[0].datasource) === 'object') {
+        sets = _.groupBy(options.targets, target => target.datasource.uid);
+      } else {
+        sets = _.groupBy(options.targets, 'datasource');
+      }
       _.forEach(sets, function (targets, dsName) {
         var promise = null;
         var opt = angular.copy(options);
