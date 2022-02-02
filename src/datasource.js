@@ -48,7 +48,6 @@ function (angular, _, dateMath, moment) {
       console.log(options);
 
       var _this = this;
-      var sets = _.groupBy(options.targets, 'datasource');
       var promisesByRefId = {};
       var promises = [];
       var targetsByRefId = {};
