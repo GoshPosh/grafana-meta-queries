@@ -60,6 +60,11 @@ function (angular, _, dateMath, moment) {
         sets = _.groupBy(options.targets, 'datasource');
       }
       _.forEach(sets, function (targets, dsName) {
+      // Grafana (8.x.x) sends datasource name as undefined with mixed plugin made as default datasource
+      // https://github.com/grafana/grafana/issues/36508
+        if(dsName=="undefined"){
+            dsName=_this.datasourceSrv.defaultName
+        }
         var promise = null;
         var opt = angular.copy(options);
         var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
