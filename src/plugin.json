@@ -12,11 +12,16 @@
   },
 
   "info": {
-    "version": "0.0.3",
+    "version": "0.0.5",
     "author": {
       "name": "Gaurav Shah",
       "url": "https://github.com/GoshPosh/grafana-meta-queries"
     },
+    "keywords": [
+      "Meta Queries",
+      "Moving Average",
+      "Week over Week"
+    ],
    "links":[
      {"name": "GitHub", "url": "https://github.com/GoshPosh/grafana-meta-queries#readme"}
     ],
@@ -24,9 +29,11 @@
       "small": "img/logo.png",
       "large": "img/logo.png"
     },
-   "dependencies": {
-     "grafanaVersion": "4.x.x",
-     "plugins": [ ]
-    }
+    "screenshots": [],
+    "updated": "2021-01-08"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=4.0.0",
+    "plugins": [ ]
   }
 }

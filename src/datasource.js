@@ -48,28 +48,47 @@ function (angular, _, dateMath, moment) {
       console.log(options);
 
       var _this = this;
-      var sets = _.groupBy(options.targets, 'datasource');
       var promisesByRefId = {};
       var promises = [];
       var targetsByRefId = {};
+      var sets;
+
+      if (typeof (options.targets[0].datasource) === 'object') {
+        sets = _.groupBy(options.targets, target => target.datasource.uid);
+      } else {
+        sets = _.groupBy(options.targets, 'datasource');
+      }
+
       _.forEach(sets, function (targets, dsName) {
+      // Grafana (8.x.x) sends datasource name as undefined with mixed plugin made as default datasource
+      // https://github.com/grafana/grafana/issues/36508
+        if(dsName=="undefined"){
+            dsName=_this.datasourceSrv.defaultName
+        }
         var promise = null;
         var opt = angular.copy(options);
         var _promisesByRefId = simpleHashCopyForPromises(promisesByRefId);
         var _targetsByRefId = simpleHashCopyForPromises(targetsByRefId);
 
+        //grafana 7.x requires ds_res as promise. Since older plugins doesnt converts to promise, added ds_res.toPromise().
         promise = _this.datasourceSrv.get(dsName).then(function (ds) {
           if (ds.meta.id === _this.meta.id) {
               return _this._doQuery(targets, _promisesByRefId, opt, _targetsByRefId)
           }
           else{
               opt.targets = targets;
-              return ds.query(opt);
+              var ds_res = ds.query(opt);
+              if(ds_res.then){
+                return ds_res;
+                }
+              else{
+                return ds_res.toPromise();
+               }
           }
 
         });
 
-
+        //grafana 7.x requires ds_res as promise. Since older plugins doesnt converts to promise, added ds_res.toPromise().
         _.forEach(targets,function(target){
           var  nonHiddenTargetPromise = promise;
           if(target.hide===true){
@@ -78,7 +97,13 @@ function (angular, _, dateMath, moment) {
                       var nonHiddenTarget = angular.copy(target);
                       nonHiddenTarget.hide = false;
                       opt.targets = [nonHiddenTarget];
-                      return ds.query(opt);
+                      var ds_res = ds.query(opt);
+                      if(ds_res.then){
+                        return ds_res;
+                        }
+                      else{
+                        return ds_res.toPromise();
+                        }
                   }
               });
           }
@@ -235,6 +260,9 @@ function (angular, _, dateMath, moment) {
         var query = target.query;
         var metric = target.metric;
         var timeshiftUnit = target.timeshiftUnit;
+
+        if(!timeshiftUnit)
+            timeshiftUnit="days"
 
         options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,timeshiftUnit).toDate();
         options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,timeshiftUnit).toDate();
