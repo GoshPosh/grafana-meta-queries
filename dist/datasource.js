@@ -47,6 +47,24 @@ function (angular, _, dateMath, moment) {
       console.log("Do query");
       console.log(options);
 
+      // Replace the template variable in expression with its current value
+      options["targets"].forEach(function (target) {
+        if (target.hasOwnProperty("expression")) {
+            var expression = target.expression;
+            if (expression.indexOf("$") >= 0) {
+              var variables = datasourceSrv["templateSrv"]["variables"];
+              Object.keys(variables).sort().reverse() // Greedy matching
+              .forEach(function(key) {
+                var variable = "$" + variables[key]["name"];
+                if (expression.indexOf(variable) >= 0) {
+                  expression = expression.replace(variable, variables[key]["current"]["value"]);
+                  target.expression = expression;
+                }
+              });
+            }
+        }
+      });
+
       var _this = this;
       var promisesByRefId = {};
       var promises = [];
