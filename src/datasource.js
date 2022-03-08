@@ -71,12 +71,11 @@ function (angular, _, dateMath, moment) {
       var targetsByRefId = {};
       var sets;
 
-      if (typeof (options.targets[0].datasource) === 'object') {
+     if (typeof (options.targets[0].datasource) === 'object') {
         sets = _.groupBy(options.targets, target => target.datasource.uid);
       } else {
         sets = _.groupBy(options.targets, 'datasource');
       }
-
       _.forEach(sets, function (targets, dsName) {
       // Grafana (8.x.x) sends datasource name as undefined with mixed plugin made as default datasource
       // https://github.com/grafana/grafana/issues/36508
@@ -229,7 +228,13 @@ function (angular, _, dateMath, moment) {
                 return timeshift(options.targets[0], options, targetsByRefId, datasourceSrv, metaTarget.outputMetricName)
             }
             else{
-                return ds.query(options)
+                var ds_res = ds.query(options);
+                if(ds_res.then){
+                    return ds_res;
+                }
+                else{
+                    return ds_res.toPromise();
+                }
             }
         });
         promise  = metaTargetPromise.then(function (result) {
@@ -298,7 +303,13 @@ function (angular, _, dateMath, moment) {
             }
 
             else{
-                return ds.query(options)
+                var ds_res = ds.query(options);
+                if(ds_res.then){
+                    return ds_res;
+                }
+                else{
+                    return ds_res.toPromise();
+                }
             }
         });
 
