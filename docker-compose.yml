@@ -1,9 +1,17 @@
-grafana:
-  image: grafana/grafana:latest
-  ports:
-    - "3000:3000"
-  volumes:
-    - ./dist:/var/lib/grafana/plugins/grafana/grafana-meta-queries
-    - ./provisioning/datasources:/etc/grafana/provisioning/datasources
-  environment:
-    - TERM=linux
+version: "3.9"
+services:
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./dist:/var/lib/grafana/plugins/grafana/grafana-meta-queries
+      - ./provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+    environment:
+      - TERM=linux
+volumes:
+  grafana-storage:
+
+
