@@ -348,50 +348,94 @@ function (angular, _, dateMath, moment) {
           var expression = target.expression;
           var queryLetters = Object.keys(targetsByRefId);
 
-
           var functionArgs = queryLetters.join(', ');
           var functionBody = 'return ('+expression+');';
 
-          var expressionFunction = new Function(functionArgs, functionBody);
+          if (functionBody.indexOf("{{") >= 0) {
+            var metricNames = new Set();
+            var resultsHash= {};
+            for(var i=0;i<results.length;i++){
+              var resultByQuery = results[i];
+              for(var j=0;j<resultByQuery.data.length;j++){
+                var resultByQueryMetric = resultByQuery.data[j];
+                var metricName = resultByQueryMetric.target;
+                if(resultByQueryMetric.datapoints){
+                  for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
+                    var datapoint = resultByQueryMetric.datapoints[k];
+                    resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                    resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                    resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                  }
+                }
+                if (Object.keys(resultByQueryMetric.props).length > 0) {
+                  metricNames.add(metricName);
+                }
+              }
+            }
 
-          var resultsHash= {};
-          for(var i=0;i<results.length;i++){
-             var resultByQuery = results[i];
-             for(var j=0;j<resultByQuery.data.length;j++){
-               var resultByQueryMetric = resultByQuery.data[j];
-               var metricName = resultByQueryMetric.target;
-               if(resultByQueryMetric.datapoints){
-                 for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
-                   var datapoint = resultByQueryMetric.datapoints[k];
-                   resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
-                   resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                   resultsHash[datapoint[1]][i][metricName] = datapoint[0]
-                 }
-               }
-             }
-
-           }
-           var datapoints= [];
-           Object.keys(resultsHash).forEach(function (datapointTime) {
-             var data = resultsHash[datapointTime];
-             var result = 0;
-             try {
-               result = expressionFunction.apply(this,data)
-             }
-             catch(err) {
-               console.log(err);
-             }
-             datapoints.push([result,parseInt(datapointTime)])
-
-           });
-
-           return {
-             data: [{
-               "target": outputMetricName,
-               "datapoints": datapoints,
-               "hide" : target.hide
-              }]
+            var pattern = /\{\{.*?\}\}/g;
+            var datas = [];
+            for (var metricName of metricNames) {
+              var datapoints= [];
+              var expressionFunction = new Function(functionArgs, functionBody.replace(pattern, metricName));
+              Object.keys(resultsHash).forEach(function (datapointTime) {
+                var data = resultsHash[datapointTime];
+                var result = 0;
+                try {
+                  result = expressionFunction.apply(this,data)
+                }
+                catch(err) {
+                  console.log(err);
+                }
+                datapoints.push([result,parseInt(datapointTime)])
+              });
+              datas.push({"target": outputMetricName.replace(pattern, metricName),
+                "datapoints": datapoints,
+                "hide": target.hide});
+            }
+            return {
+              data: datas
             };
+          } else {
+            var expressionFunction = new Function(functionArgs, functionBody);
+
+            var resultsHash= {};
+            for(var i=0;i<results.length;i++){
+              var resultByQuery = results[i];
+              for(var j=0;j<resultByQuery.data.length;j++){
+                var resultByQueryMetric = resultByQuery.data[j];
+                var metricName = resultByQueryMetric.target;
+                if(resultByQueryMetric.datapoints){
+                  for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
+                    var datapoint = resultByQueryMetric.datapoints[k];
+                    resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                    resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                    resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                  }
+                }
+              }
+            }
+            var datapoints= [];
+            Object.keys(resultsHash).forEach(function (datapointTime) {
+              var data = resultsHash[datapointTime];
+              var result = 0;
+              try {
+                result = expressionFunction.apply(this,data)
+              }
+              catch(err) {
+                console.log(err);
+              }
+              datapoints.push([result,parseInt(datapointTime)])
+            });
+
+            return {
+              data: [{
+                "target": outputMetricName,
+                "datapoints": datapoints,
+                "hide" : target.hide
+               }]
+             };
+          }
     }
 
     function filter_datapoints(target, outputMetricName, results, root_query_results){
