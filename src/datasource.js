@@ -289,6 +289,9 @@ function (angular, _, dateMath, moment) {
 
         options.range.from._d = dateToMoment(options.range.from, false).add(periodsToShift,timeshiftUnit).toDate();
         options.range.to._d = dateToMoment(options.range.to, false).add(periodsToShift,timeshiftUnit).toDate();
+        // also patch the rangeRaw field in case any datasource uses it
+        options.rangeRaw.from = options.range.from;
+        options.rangeRaw.to = options.range.to;
 
         var metaTarget = angular.copy(targetsByRefId[query]);
         metaTarget.hide = false;
@@ -317,11 +320,16 @@ function (angular, _, dateMath, moment) {
               var datapoints = []
               var data = result.data;
               data.forEach(function (datum) {
-                  if(datum.target===metric){
-                    datum.datapoints.forEach(function (datapoint) {
-                        datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,timeshiftUnit).toDate().getTime();
-                        datapoints.push(datapoint)
-                    })
+                  if(datum.target===metric || datum.name == metric){
+                    // console.log({datum});
+                    if (datum.datapoints) {
+                        datum.datapoints.forEach(function (datapoint) {
+                            datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,timeshiftUnit).toDate().getTime();
+                            datapoints.push(datapoint)
+                        })
+                    } else if (datum.fields) {
+                      datapoints = dataframe_to_datapoints(datum.fields)
+                    }
                   }
               });
                 return {
@@ -394,11 +402,23 @@ function (angular, _, dateMath, moment) {
             };
     }
 
+    function dataframe_to_datapoints(fields) {
+      var datapoints = []
+      for (let i = 0; i < fields[0].values.length; i++) {
+        var dtime = dateToMoment(
+          new Date(fields[0].values.get(i)),false).subtract(periodsToShift,timeshiftUnit).toDate().getTime();
+        datapoints.push([fields[1].values.get(i), dtime]);
+      }
+
+      return datapoints
+    }
+
     function filter_datapoints(target, outputMetricName, results, root_query_results){
 
          var datapoints = []
          var actualFrom = null
-         if(root_query_results['data'][0]['datapoints'][0]!=undefined) {
+
+         if(root_query_results['data'][0] && root_query_results['data'][0]['datapoints'] && root_query_results['data'][0]['datapoints'][0]!=undefined) {
           actualFrom = root_query_results['data'][0]['datapoints'][0][1]
          }
          results.data.forEach(function (datum) {
@@ -407,6 +427,22 @@ function (angular, _, dateMath, moment) {
                 datapoints.push(datapoint)
            })
           })
+
+          // try to filter the result from the new dataframe format
+          if (actualFrom == null || datapoints.length == 0) {
+            if (root_query_results['data'][0] && root_query_results['data'][0]['fields']) {
+              actualFrom = root_query_results['data'][0]['fields'][0].values.get(0)
+              console.log(actualFrom);
+              results.data.forEach(function (datum) {
+                datum.datapoints.forEach(function (datapoint) {
+                  if(actualFrom && datapoint[1]>=actualFrom){
+                    //console.log({datapoint});
+                    datapoints.push(datapoint)
+                  }
+                })
+              })
+            }
+          }
 
          return {
            data: [{
