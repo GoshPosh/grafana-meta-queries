@@ -215,6 +215,7 @@ function (angular, _, dateMath, moment) {
 
 
         options.range.from._d = dateToMoment(options.range.from, false).subtract(periodsToShift-1,'days').toDate();
+        options.rangeRaw.from = options.range.from;
 
         var metaTarget = angular.copy(targetsByRefId[query]);
         metaTarget.hide = false;
@@ -241,19 +242,29 @@ function (angular, _, dateMath, moment) {
                 var datapoints = []
                 var data = result.data;
                 data.forEach(function (datum) {
-                    if(datum.target===metric){
+                    if(datum.target===metric || datum.name == metric){
                         var datapointByTime = {};
-                        datum.datapoints.forEach(function (datapoint) {
-                            datapointByTime[datapoint[1]] = datapoint[0];
+                        
+                        if (datum.datapoints) {
+                          datum.datapoints.forEach(function (datapoint) {
+                              datapointByTime[datapoint[1]] = datapoint[0];
+                              var metricSum = calcMetricSum(datapoint, datapointByTime);
 
-                            var metricSum = 0;
-                            for(var count = 0; count < periodsToShift; count++) {
-                                var targetDate = dateToMoment(new Date(datapoint[1]),false).subtract(count,'days').toDate().getTime()
-                                metricSum += datapointByTime[targetDate] || 0
-                            }
+                              datapoints.push([metricSum/periodsToShift,datapoint[1]])
+                          })
+                        } else if (datum.fields) {
+                          for (let i = 0; i < datum.fields[0].values.length;i++) {
+                            var datapoint = [
+                              datum.fields[1].values.get(i),
+                              datum.fields[0].values.get(i),
+                            ]
+
+                            datapointByTime[datapoint[1]] = datapoint[0];
+                            var metricSum = calcMetricSum(datapoint, datapointByTime);
 
                             datapoints.push([metricSum/periodsToShift,datapoint[1]])
-                        })
+                          }
+                        }
                     }
                 });
                 return {
@@ -273,6 +284,15 @@ function (angular, _, dateMath, moment) {
 
             });
         return promise;
+
+      function calcMetricSum(datapoint, datapointByTime) {
+        var metricSum = 0;
+        for (var count = 0; count < periodsToShift; count++) {
+          var targetDate = dateToMoment(new Date(datapoint[1]), false).subtract(count, 'days').toDate().getTime();
+          metricSum += datapointByTime[targetDate] || 0;
+        }
+        return metricSum;
+      }
     }
 
     function timeshift(target, options, targetsByRefId, datasourceSrv, outputMetricName){
@@ -321,14 +341,13 @@ function (angular, _, dateMath, moment) {
               var data = result.data;
               data.forEach(function (datum) {
                   if(datum.target===metric || datum.name == metric){
-                    // console.log({datum});
                     if (datum.datapoints) {
                         datum.datapoints.forEach(function (datapoint) {
                             datapoint[1] = dateToMoment(new Date(datapoint[1]),false).subtract(periodsToShift,timeshiftUnit).toDate().getTime();
                             datapoints.push(datapoint)
                         })
                     } else if (datum.fields) {
-                      datapoints = dataframe_to_datapoints(datum.fields)
+                      datapoints = dataframe_to_datapoints(datum.fields, periodsToShift, timeshiftUnit)
                     }
                   }
               });
@@ -368,12 +387,23 @@ function (angular, _, dateMath, moment) {
              for(var j=0;j<resultByQuery.data.length;j++){
                var resultByQueryMetric = resultByQuery.data[j];
                var metricName = resultByQueryMetric.target;
-               if(resultByQueryMetric.datapoints){
+               if(resultByQueryMetric.datapoints) {
                  for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
                    var datapoint = resultByQueryMetric.datapoints[k];
                    resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
                    resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
                    resultsHash[datapoint[1]][i][metricName] = datapoint[0]
+                 }
+                } else if (resultByQueryMetric.fields) {
+                  metricName = resultByQueryMetric.name;
+                  for(var k=0;k<resultByQueryMetric.fields[0].values.length;k++){
+                    var datapoint = [
+                        resultByQueryMetric.fields[1].values.get(k),
+                        resultByQueryMetric.fields[0].values.get(k),
+                    ]
+                    resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                    resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                    resultsHash[datapoint[1]][i][metricName] = datapoint[0]
                  }
                }
              }
@@ -402,7 +432,7 @@ function (angular, _, dateMath, moment) {
             };
     }
 
-    function dataframe_to_datapoints(fields) {
+    function dataframe_to_datapoints(fields, periodsToShift, timeshiftUnit) {
       var datapoints = []
       for (let i = 0; i < fields[0].values.length; i++) {
         var dtime = dateToMoment(
@@ -432,11 +462,9 @@ function (angular, _, dateMath, moment) {
           if (actualFrom == null || datapoints.length == 0) {
             if (root_query_results['data'][0] && root_query_results['data'][0]['fields']) {
               actualFrom = root_query_results['data'][0]['fields'][0].values.get(0)
-              console.log(actualFrom);
               results.data.forEach(function (datum) {
                 datum.datapoints.forEach(function (datapoint) {
                   if(actualFrom && datapoint[1]>=actualFrom){
-                    //console.log({datapoint});
                     datapoints.push(datapoint)
                   }
                 })
