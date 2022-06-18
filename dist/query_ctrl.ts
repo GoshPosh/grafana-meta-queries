@@ -27,6 +27,8 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
   customGranularity: any;
   target: any;
   datasource: any;
+  orderTypes: any;
+  orderSizes: any;
 
     queryTypeValidators = {
       "TimeShift": this.validateTimeShiftQuery.bind(this),
@@ -48,6 +50,27 @@ export class MetaQueriesQueryCtrl extends QueryCtrl {
       }
 
     this.queryTypes = _.keys(this.queryTypeValidators);
+
+    if (!this.target.orderType) {
+      this.target.orderType = 'Top';
+    }
+    
+    this.orderTypes = ['Top', 'Bottom'];
+ 
+    if (!this.target.orderSize && this.target.orderSize !== 0) {
+      this.target.orderSize = 5;
+    }
+ 
+    this.orderSizes = [
+      { id: 0, name: 'No limit' },
+      { id: 1, name: '1' },
+      { id: 2, name: '2' },
+      { id: 3, name: '3' },
+      { id: 5, name: '5' },
+      { id: 10, name: '10' },
+      { id: 15, name: '15' },
+      { id: 20, name: '20' },
+    ];
 
     this.errors = this.validateTarget();
 

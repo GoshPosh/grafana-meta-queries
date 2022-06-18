@@ -174,8 +174,15 @@ function (angular, _, dateMath, moment) {
 
       }
       else if (target.queryType === 'Arithmetic') {
+          var expression = target.expression || '';
+          var queryLetters = Object.keys(targetsByRefId).filter(x => expression.indexOf(x + '[') !== -1);
+          var queryPromises = [];
 
-          promise = $q.all(Object.values(promisesByRefId)).then(function(results) {
+          queryLetters.forEach(function(queryLetter) {
+              queryPromises.push(promisesByRefId[queryLetter]);
+          });
+
+          promise = $q.all(queryPromises).then(function(results) {
             return arithmetic(target, targetsByRefId, outputMetricName, results)
           });
 
@@ -345,53 +352,150 @@ function (angular, _, dateMath, moment) {
 
     function arithmetic(target, targetsByRefId, outputMetricName, results){
 
-          var expression = target.expression;
-          var queryLetters = Object.keys(targetsByRefId);
+        var expression = target.expression || '';
+        var queryLetters = Object.keys(targetsByRefId).filter(x => expression.indexOf(x + '[') !== -1);
 
+        var functionArgs = queryLetters.join(', ');
+        var functionBody = 'return ('+expression+');';
+        var expressionFunction = new Function(functionArgs, functionBody);
+        var resultsHashMap = {};
+        var resultsTotalList = [];
 
-          var functionArgs = queryLetters.join(', ');
-          var functionBody = 'return ('+expression+');';
+        for (var i = 0; i < results.length; i++) {
+            var resultByQuery = results[i];
+            var resultByQueryDataLength = resultByQuery.data.length;
 
-          var expressionFunction = new Function(functionArgs, functionBody);
+            for (var j = 0; j < resultByQueryDataLength; j++) {
+                var resultByQueryMetric = resultByQuery.data[j];
+                var metricName = resultByQueryMetric.target;
 
-          var resultsHash= {};
-          for(var i=0;i<results.length;i++){
-             var resultByQuery = results[i];
-             for(var j=0;j<resultByQuery.data.length;j++){
-               var resultByQueryMetric = resultByQuery.data[j];
-               var metricName = resultByQueryMetric.target;
-               if(resultByQueryMetric.datapoints){
-                 for(var k=0;k<resultByQueryMetric.datapoints.length;k++){
-                   var datapoint = resultByQueryMetric.datapoints[k];
-                   resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
-                   resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
-                   resultsHash[datapoint[1]][i][metricName] = datapoint[0]
-                 }
-               }
-             }
+                // default no group by
+                var resultsTitle = outputMetricName;
 
-           }
-           var datapoints= [];
-           Object.keys(resultsHash).forEach(function (datapointTime) {
-             var data = resultsHash[datapointTime];
-             var result = 0;
-             try {
-               result = expressionFunction.apply(this,data)
-             }
-             catch(err) {
-               console.log(err);
-             }
-             datapoints.push([result,parseInt(datapointTime)])
+                if (resultByQueryMetric.props) {
+                    var groupByValues = Object.values(resultByQueryMetric.props);
 
-           });
+                    if (groupByValues instanceof Array && groupByValues.length > 0) {
+                        if(outputMetricName) {
+                            resultsTitle = outputMetricName + " ";
+                        }
+                        for(var k = 0; k < groupByValues.length; k++) {
+                            if(k) resultsTitle += " ";
+                            resultsTitle += groupByValues[k];
+                        }
+                    }
+                }
 
-           return {
-             data: [{
-               "target": outputMetricName,
-               "datapoints": datapoints,
-               "hide" : target.hide
-              }]
-            };
+                if (!!!resultsHashMap[resultsTitle]) {
+                    resultsHashMap[resultsTitle] = {};
+                }
+
+                var dstTitleData = resultsTotalList.find(x => x.id === resultsTitle);
+
+                if (!dstTitleData) {
+                    dstTitleData = {
+                        id: resultsTitle,
+                        value: []
+                    };
+                    resultsTotalList.push(dstTitleData);
+                }
+
+                var resultsHash = resultsHashMap[resultsTitle];
+
+                if (resultByQueryMetric.datapoints) {
+                    var metricMap = {};
+                    metricMap[metricName] = 0;
+
+                    for (var k = 0; k < resultByQueryMetric.datapoints.length; k++) {
+                        var datapoint = resultByQueryMetric.datapoints[k];
+                        resultsHash[datapoint[1]] = resultsHash[datapoint[1]] || [];
+                        resultsHash[datapoint[1]][i] = resultsHash[datapoint[1]][i] || {};
+                        resultsHash[datapoint[1]][i][metricName] = datapoint[0];
+                        metricMap[metricName] += datapoint[0];
+                    }
+
+                    dstTitleData.value.push(metricMap);
+                }
+            }
+        }
+
+        var orderType = target.orderType;
+        var orderSize = target.orderSize;
+        var resultTitles = Object.keys(resultsHashMap);
+
+        if (!(resultTitles.length === 1 && resultTitles[0] === outputMetricName)) {
+            resultTitles = [];
+            // compute by group name
+            resultsTotalList.forEach(function(resultTotal) {
+                var result = 0;
+
+                try {
+                    result = expressionFunction.apply(this, resultTotal.value);
+                } catch(err) {
+                    console.log(err);
+                }
+
+                resultTotal.value = result;
+            });
+
+            // sort results
+            resultsTotalList.sort(function(obj1, obj2) {
+                var val1 = obj1.value;
+                var val2 = obj2.value;
+
+                if (val1 < val2) {
+                    return -1;
+                } else if (val1 > val2) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+
+            if (orderSize > resultsTotalList.length || orderSize == 0) {
+                orderSize = resultsTotalList.length;
+            }
+
+            if (orderType === 'Top') {
+                for (var i = resultsTotalList.length - 1, l = resultsTotalList.length - orderSize - 1; i > l; i--) {
+                    resultTitles.push(resultsTotalList[i].id);
+                }
+            } else {
+                for (var i = 0; i < orderSize; i++) {
+                    resultTitles.push(resultsTotalList[i].id);
+                }
+            }
+        }
+
+        var metaResults = [];
+
+        resultTitles.forEach(function(resultsHashTitle) {
+            var resultsHash = resultsHashMap[resultsHashTitle];
+            var datapoints = [];
+
+            Object.keys(resultsHash).forEach(function(datapointTime) {
+                var data = resultsHash[datapointTime];
+                var result = 0;
+
+                try {
+                    result = expressionFunction.apply(this,data);
+                } catch(err) {
+                    console.log(err);
+                }
+
+                datapoints.push([result,parseInt(datapointTime)]);
+            });
+
+            metaResults.push({
+                'target': resultsHashTitle,
+                'datapoints': datapoints,
+                'hide': target.hide
+            });
+        });
+
+        return {
+            data: metaResults
+        };
     }
 
     function filter_datapoints(target, outputMetricName, results, root_query_results){

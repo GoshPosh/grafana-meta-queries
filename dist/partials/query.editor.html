@@ -82,7 +82,20 @@
       <label class="gf-form-label" bs-tooltip="ctrl.target.errors.expression" style="color: rgb(229, 189, 28)" ng-show="ctrl.target.errors.expression">
         <i class="fa fa-warning"></i>
       </label>
-
+      <label class="gf-form-label query-keyword width-4">
+				Order
+			</label>
+			<div class="gf-form-select-wrapper max-width-15">
+				<select ng-model="ctrl.target.orderType" class="gf-form-input" ng-options="type for type in ctrl.orderTypes" ng-change="ctrl.targetBlur()">
+				</select>
+			</div>
+			<label class="gf-form-label query-keyword width-4">
+				Size
+			</label>
+			<div class="gf-form-select-wrapper max-width-15">
+				<select ng-model="ctrl.target.orderSize" class="gf-form-input" ng-options="o.id as o.name for o in ctrl.orderSizes" ng-change="ctrl.targetBlur()">
+				</select>
+			</div>
     </div>
   </div>
 </query-editor-row>
