@@ -244,7 +244,7 @@ function (angular, _, dateMath, moment) {
                 data.forEach(function (datum) {
                     if(datum.target===metric || datum.name == metric){
                         var datapointByTime = {};
-                        
+
                         if (datum.datapoints) {
                           datum.datapoints.forEach(function (datapoint) {
                               datapointByTime[datapoint[1]] = datapoint[0];
