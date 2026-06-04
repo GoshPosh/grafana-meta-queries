@@ -2,12 +2,10 @@ module.exports = function(grunt) {
 
   require('load-grunt-tasks')(grunt);
 
-  grunt.loadNpmTasks('grunt-execute');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-watch');
 
-
-    grunt.initConfig({
+  grunt.initConfig({
 
     clean: ["dist"],
 
@@ -29,60 +27,27 @@ module.exports = function(grunt) {
       rebuild_all: {
         files: ['src/**/*'],
         tasks: ['watch-ts'],
-        options: {spawn: false}
+        options: { spawn: false }
       }
     },
 
-    typescript: {
-      build: {
-        src: ['dist/**/*.ts', "!src/spec/**/*", "!**/*.d.ts"],
-        dest: 'dist/',
-        options: {
-          module: 'system', //or commonjs
-          target: 'es3', //or es5
-          rootDir: 'dist/',
-          keepDirectoryHierarchy: false,
-          declaration: true,
-          emitDecoratorMetadata: true,
-          experimentalDecorators: true,
-          sourceMap: true,
-          noImplicitAny: false,
-        }
+    exec: {
+      tsc_build: {
+        command: './node_modules/.bin/tsc --module system --target es3 --rootDir dist --outDir dist --declaration --emitDecoratorMetadata --experimentalDecorators --sourceMap dist/config_ctrl.ts dist/module.ts dist/query_ctrl.ts dist/sdk/query_ctrl.ts dist/sdk/sdk.ts'
       },
-      distTests: {
-        src: ['src/**/*.ts', "!src/spec/**/*", "!**/*.d.ts"],
-        dest: 'dist/test/',
-        options: {
-          module: 'commonjs', //or commonjs
-          target: 'es5', //or es5
-          rootDir: 'src/',
-          sourceRoot: 'src/',
-          declaration: true,
-          emitDecoratorMetadata: true,
-          experimentalDecorators: true,
-          sourceMap: true,
-          noImplicitAny: false,
-        }
-      },
-      // distTestsSpecs: {
-      //   src: ['src/spec/**/*.ts'],
-      //   dest: 'dist/test/',
-      //   options: {
-      //     module: 'commonjs', //or commonjs
-      //     target: 'es5', //or es5
-      //     declaration: true,
-      //     emitDecoratorMetadata: true,
-      //     experimentalDecorators: true,
-      //     sourceMap: true,
-      //     noImplicitAny: false,
-      //   }
+      tsc_test: {
+        command: './node_modules/.bin/tsc --module commonjs --target es5 --rootDir src --outDir dist/test --declaration --emitDecoratorMetadata --experimentalDecorators --sourceMap src/config_ctrl.ts src/module.ts src/query_ctrl.ts src/sdk/query_ctrl.ts src/sdk/sdk.ts'
+      }
+
+      // tsc_test_specs: {
+      //   command: './node_modules/.bin/tsc --module commonjs --target es5 --outDir dist/test src/spec/**/*.ts'
       // }
     },
 
     // babel: {
     //   options: {
     //     sourceMap: true,
-    //     presets:  ['es2015']
+    //     presets: ['es2015']
     //   },
     //   distTestsSpecsNoSystemJs: {
     //     files: [{
@@ -90,7 +55,7 @@ module.exports = function(grunt) {
     //       cwd: 'src/spec',
     //       src: ['**/*.js'],
     //       dest: 'dist/test/spec',
-    //       ext:'.js'
+    //       ext: '.js'
     //     }]
     //   }
     // },
@@ -103,13 +68,14 @@ module.exports = function(grunt) {
     //     src: ['dist/test/spec/test-main.js', 'dist/test/spec/*_specs.js']
     //   }
     // }
+
   });
 
   grunt.registerTask('default', [
     'clean',
     'copy',
-    'typescript:build',
-    'typescript:distTests'
+    'exec:tsc_build',
+    'exec:tsc_test'
     // 'babel',
     // 'mochaTest'
   ]);
@@ -118,7 +84,6 @@ module.exports = function(grunt) {
     'clean',
     'copy:src_to_dist',
     'copy:pluginDef',
-    'typescript:build'
+    'exec:tsc_build'
   ]);
 };
-
