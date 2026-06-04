@@ -10,14 +10,17 @@ git clone git@github.com:GoshPosh/grafana-meta-queries.git
 sudo service grafana-server restart
 ```  
 
-Create a new datasource with a name and select `type` as `MetaQueries`
+## Usage
+1. Create a new datasource and select `MetaQueries` as the desired type.
 ![Screenshot](https://raw.githubusercontent.com/GoshPosh/grafana-meta-queries/master/img/DataSourceConfig.png?raw=true "DataSource")
 
-## Usage
-* Set the Graph's data source to `MetaQueries`
-* Add query of your data source (add a few more)
-* Add query with `MetaQueries` as data source
-* Reference other columns as `A` or `B` depending on what is shown 
+2. And new panel and set the `MetaQueries` as the data source.
+
+3. On the top right corner, Click on Add query. Select the desired data source and specify the query as desired (add a few more).
+
+4. Add a `MetaQueries` query, and preform the wanted manipulation (examples listed below)
+The Reference to the queries should be made both by query and it's metrics names.
+For example, from query `A` we'd like to work against metric calls `Test`, the refferer should be A['test'].
 
 ## Examples
 #### Arithmetic
@@ -36,11 +39,16 @@ Lets you perform arithmetic operations on one or more existing queries.
 Grafana Meta Queries plugin 0.0.1 and above are supported for Grafana: 4.x.x
 
 
-## Known Issues
-* Moving average of moving average is not supported
-* Moving average of time shift is not supported
-* Time shift of Moving average is not supported
-* Time shift of Time Shift is not supported
+## Supports Nesting 
+* Moving average of moving average
+* Moving average of time shift
+* Time shift of Moving average 
+* Time shift of Time Shift
+
+## Known issue
+* Moving average on arithmetic is not supported
+* TimeShift on arithmetic is not supported
+
 
 ## Status
 Lot of features might still not be implemented. Your contributions are welcome.
